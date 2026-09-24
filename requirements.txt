@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+gunicorn
+pydantic
+requests
+PySastrawi
+newspaper4k
+beautifulsoup4
+lxml
+python-dotenv
