@@ -6,6 +6,17 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id-ID/1.0.0/).
 
 ---
 
+## [2.0.1] — 2026-09-29
+
+### Dokumentasi
+- **`docs/DEPLOYMENT.md`** — Panduan deployment lengkap: VPS, systemd, Nginx, Caddy, Docker
+- **`docs/ARCHITECTURE.md`** — Tambah bagian Deployment, hapus dependensi `httpx` yang belum digunakan
+- **`docs/DEVELOPER_GUIDE.md`** — Perbaiki URL default `NINEROUTER_URL` agar sesuai `.env.example`, tambah bagian Deployment (systemd, Nginx)
+- **`docs/CHANGELOG.md`** — Riwayat perubahan per versi (file ini)
+- **`README.md`** — Tambah bagian Deployment, link ke `DEPLOYMENT.md`, perbaiki tabel dokumentasi
+
+---
+
 ## [2.0.0] — 2026-09-24
 
 ### Ditambahkan

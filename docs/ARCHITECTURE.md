@@ -14,7 +14,8 @@
 5. [Service Details](#service-details)
 6. [External Dependencies](#external-dependencies)
 7. [Keputusan Desain](#keputusan-desain)
-8. [Skalabilitas & Limitasi](#skalabilitas--limitasi)
+8. [Deployment](#deployment)
+9. [Skalabilitas & Limitasi](#skalabilitas--limitasi)
 
 ---
 
@@ -318,7 +319,6 @@ Minimum score = 0
 | `gunicorn` | latest | Production WSGI/ASGI server | ❌ (production only) |
 | `pydantic` | latest | Data validation | ✅ |
 | `requests` | latest | HTTP client (untuk 9Router) | ✅ |
-| `httpx` | latest | Async HTTP client (reserved) | ❌ |
 | `PySastrawi` | latest | Indonesian stemmer | ✅ |
 | `newspaper4k` | latest | Article scraping | ✅ (untuk endpoint /analyze-url) |
 | `beautifulsoup4` | latest | HTML parsing | ✅ |
@@ -359,6 +359,32 @@ newspaper4k dirancang untuk ekstrasi artikel berita — langsung extract title, 
 ### Mengapa Sugestions Deduplicated?
 
 Saran dari berbagai service (teknis, HTML, E-E-A-T) bisa overlap. `dict.fromkeys()` digunakan karena menjaga urutan pertama kemunculan (tidak seperti `set()`).
+
+---
+
+## Deployment
+
+### Development
+
+```bash
+python main.py
+# atau
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### Production (VPS)
+
+```bash
+gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+```
+
+Rekomendasi production setup:
+- Gunakan reverse proxy (Nginx/Caddy) di depan Gunicorn
+- Aktifkan HTTPS via Let's Encrypt
+- Gunakan systemd service atau Docker untuk process management
+- Set `--workers` sesuai jumlah CPU core (`2 × CPU + 1`)
+
+> Detail lengkap: [DEPLOYMENT.md](./DEPLOYMENT.md)
 
 ---
 

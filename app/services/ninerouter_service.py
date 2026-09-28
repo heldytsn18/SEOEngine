@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Konfigurasi 9Router AI Proxy Gateway (baca dari .env)
-NINEROUTER_URL = os.getenv("NINEROUTER_URL", "http://localhost:20128/v1/chat/completions")
+NINEROUTER_URL = os.getenv("NINEROUTER_URL", "https://api.ninerouter.com/v1/chat/completions")
 NINEROUTER_API_KEY = os.getenv("NINEROUTER_API_KEY", "")
 
 

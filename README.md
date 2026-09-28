@@ -125,6 +125,7 @@ SEOEngine/
 │   ├── API_REFERENCE.md             # Referensi API lengkap
 │   ├── DEVELOPER_GUIDE.md           # Panduan pengembang
 │   ├── ARCHITECTURE.md              # Arsitektur & alur data
+│   ├── DEPLOYMENT.md                # Panduan deployment VPS, Docker
 │   └── CHANGELOG.md                 # Riwayat perubahan
 └── external_repos/                  # Repositori referensi (read-only)
     ├── PySastrawi/
@@ -178,7 +179,28 @@ Atau gunakan Swagger UI di **http://localhost:8000/docs** untuk testing interakt
 | [API Reference](docs/API_REFERENCE.md) | Spesifikasi lengkap semua endpoint, request/response |
 | [Developer Guide](docs/DEVELOPER_GUIDE.md) | Panduan setup, pengembangan, dan konvensi kode |
 | [Architecture](docs/ARCHITECTURE.md) | Arsitektur sistem, alur data, dan keputusan desain |
+| [Deployment Guide](docs/DEPLOYMENT.md) | Panduan deployment VPS, systemd, Nginx, Docker |
 | [Changelog](docs/CHANGELOG.md) | Riwayat perubahan per versi |
+
+---
+
+## 🚀 Deployment
+
+### Development
+
+```bash
+python main.py
+# atau
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### Production (VPS)
+
+```bash
+gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+```
+
+> 📖 Panduan lengkap (systemd, Nginx, Docker): [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 
 ---
 

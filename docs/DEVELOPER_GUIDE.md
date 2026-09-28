@@ -14,6 +14,7 @@
 5. [Panduan Pengembangan](#panduan-pengembangan)
 6. [Konvensi Kode](#konvensi-kode)
 7. [Troubleshooting](#troubleshooting)
+8. [Deployment](#deployment)
 
 ---
 
@@ -96,6 +97,7 @@ SEOEngine/
 │   ├── API_REFERENCE.md             # Referensi API lengkap
 │   ├── DEVELOPER_GUIDE.md           # Panduan pengembang (file ini)
 │   ├── ARCHITECTURE.md              # Arsitektur sistem & keputusan desain
+│   ├── DEPLOYMENT.md                # Panduan deployment VPS, Docker
 │   └── CHANGELOG.md                 # Riwayat perubahan
 └── external_repos/                  # Repositori referensi (read-only, tidak dimodifikasi)
     ├── PySastrawi/                  # Indonesian stemmer library
@@ -129,14 +131,14 @@ Konfigurasi disimpan di file `.env` (di-load via `python-dotenv`):
 
 | Variabel | Deskripsi | Contoh |
 |---|---|---|
-| `NINEROUTER_URL` | Endpoint API 9Router (OpenAI-compatible) | `http://localhost:20128/v1/chat/completions` |
+| `NINEROUTER_URL` | Endpoint API 9Router (OpenAI-compatible) | `https://api.ninerouter.com/v1/chat/completions` |
 | `NINEROUTER_API_KEY` | API key untuk autentikasi 9Router | `sk-xxxxx` |
 
 Variabel dibaca di `app/services/ninerouter_service.py`:
 
 ```python
 load_dotenv()
-NINEROUTER_URL = os.getenv("NINEROUTER_URL", "http://localhost:20128/v1/chat/completions")
+NINEROUTER_URL = os.getenv("NINEROUTER_URL", "https://api.ninerouter.com/v1/chat/completions")
 NINEROUTER_API_KEY = os.getenv("NINEROUTER_API_KEY", "")
 ```
 
@@ -372,3 +374,62 @@ gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
 - **ReDoc**: `http://localhost:8000/redoc` — dokumentasi API read-only
 - **Skip AI**: Set `use_ai_analysis: false` di request untuk skip analisis GEO saat 9Router offline
 - **Logs**: Uvicorn mencetak request/response ke stdout. Gunakan `--log-level debug` untuk detail
+
+---
+
+## Deployment
+
+### Production (VPS / Linux Server)
+
+```bash
+# Install dependensi
+pip install -r requirements.txt
+
+# Jalankan dengan Gunicorn (multi-worker)
+gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+```
+
+### Systemd Service (Contoh)
+
+Buat file `/etc/systemd/system/seoengine.service`:
+
+```ini
+[Unit]
+Description=BorneoFlash SEO Engine
+After=network.target
+
+[Service]
+User=www-data
+WorkingDirectory=/opt/SEOEngine
+Environment="PATH=/opt/SEOEngine/.venv/bin"
+ExecStart=/opt/SEOEngine/.venv/bin/gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable seoengine
+sudo systemctl start seoengine
+```
+
+### Reverse Proxy (Nginx)
+
+```nginx
+server {
+    listen 80;
+    server_name seo-engine.example.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+> Panduan deployment lengkap: [DEPLOYMENT.md](../docs/DEPLOYMENT.md)
