@@ -2,6 +2,7 @@ import os
 import re
 import json
 import requests
+from datetime import datetime
 from typing import Dict, Any
 
 from dotenv import load_dotenv
@@ -15,8 +16,10 @@ NINEROUTER_API_KEY = os.getenv("NINEROUTER_API_KEY", "")
 
 def call_9router_for_geo(title: str, content: str, keyword: str) -> Dict[str, Any]:
     """Panggil 9Router AI Proxy untuk evaluasi kualitatif GEO & E-E-A-T."""
+    current_date = datetime.now().strftime("%Y-%m-%d")
     prompt = f"""
 Bertindaklah sebagai Senior SEO Engine Evaluator untuk berita Indonesia.
+Konteks Waktu: Hari ini adalah tanggal {current_date}. Jangan anggap tahun berjalan sebagai masa depan.
 Evaluasi artikel berikut berdasarkan standar GEO (Generative Engine Optimization) dan E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness).
 
 Judul: {title}
