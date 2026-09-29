@@ -65,6 +65,7 @@ Analisis draf artikel berita: skor teknis SEO, struktur HTML, dan evaluasi GEO/E
 | `focus_keyword` | string | ✅ | — | Kata kunci fokus SEO |
 | `category` | string | ❌ | `null` | Kategori berita |
 | `use_ai_analysis` | boolean | ❌ | `true` | Aktifkan analisis GEO via 9Router |
+| `base_url` | string | ❌ | `null` | URL utama untuk deteksi *internal link* |
 
 **Contoh Request:**
 ```json
@@ -73,7 +74,8 @@ Analisis draf artikel berita: skor teknis SEO, struktur HTML, dan evaluasi GEO/E
   "content": "<h2>Penangkapan di Balikpapan</h2><p>Kepolisian Daerah Kalimantan Timur melakukan tindakan tegas terhadap pelaku judi online...</p><img src='bukti.jpg' alt='Barang bukti judi online'>",
   "focus_keyword": "Judi Online Kaltim",
   "category": "Hukum",
-  "use_ai_analysis": true
+  "use_ai_analysis": true,
+  "base_url": "https://borneoflash.com"
 }
 ```
 
