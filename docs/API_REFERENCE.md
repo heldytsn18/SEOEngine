@@ -150,7 +150,7 @@ Analisis draf artikel berita: skor teknis SEO, struktur HTML, dan evaluasi GEO/E
       "seo_title": "Polri Tindak Lanjut Judi Online di Kaltim",
       "meta_description": "Kepolisian Daerah Kalimantan Timur melakukan..."
     },
-    "editor_notes": "Analisis ini dihasilkan oleh FastAPI SEO Engine.",
+    "editor_notes": "Perbaiki tanggal kejadian yang tercantum karena ini adalah kesalahan fatal untuk berita. Perpendek judul agar lebih ringkas dan fokus pada inti berita. Tambahkan kutipan langsung dari pihak kepolisian.",
     "combined_suggestions": [
       "Saran teknis 1",
       "Saran HTML 1",
@@ -238,7 +238,7 @@ Struktur sama dengan `/analyze`, ditambah field `url_metadata`:
       "seo_title": "Judul Artikel dari Website",
       "meta_description": "150 karakter pertama dari konten..."
     },
-    "editor_notes": "Analisis ini dihasilkan oleh FastAPI SEO Engine via URL.",
+    "editor_notes": "Sertakan tautan ke sumber resmi (misalnya, situs instansi) jika ada rilis pers terkait untuk meningkatkan Authoritativeness. Perjelas sumber informasi artikel.",
     "url_metadata": {
       "url": "https://kaltimtoday.co/berita-judi-online-kaltim",
       "title": "Judul Artikel dari Website",

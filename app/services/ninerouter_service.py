@@ -48,7 +48,8 @@ Berikan output JSON SAJA tanpa penjelasan tambahan, dengan struktur format:
       "is_balanced": <true/false>,
       "has_verification": <true/false>,
       "suggestions": ["<saran>"]
-  }}
+  }},
+  "editor_notes": "<Paragraf kohesif berisi instruksi editor seperti cek tanggal, perpendek judul, tambahkan kutipan, dll>"
 }}
 """
     try:

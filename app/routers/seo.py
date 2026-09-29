@@ -40,6 +40,9 @@ def analyze_article(payload: ArticleAnalysisRequest):
     # Hapus duplikasi, pertahankan urutan
     all_suggestions = list(dict.fromkeys(all_suggestions))
 
+    # 5. Generate Editor Notes
+    editor_notes = geo_res.get("editor_notes") if geo_res and "editor_notes" in geo_res else " ".join(all_suggestions) if all_suggestions else "Artikel sudah cukup baik, tidak ada catatan khusus."
+
     return {
         "status": "success",
         "data": {
@@ -56,7 +59,7 @@ def analyze_article(payload: ArticleAnalysisRequest):
                 "seo_title": payload.title,
                 "meta_description": payload.content[:150] + "..." if payload.content else ""
             },
-            "editor_notes": "Analisis ini dihasilkan oleh FastAPI SEO Engine.",
+            "editor_notes": editor_notes,
             "overall_score": overall_score,
             "html_structure_analysis": html_res,
             "combined_suggestions": all_suggestions
@@ -117,6 +120,9 @@ def analyze_url(payload: URLAnalysisRequest):
             all_suggestions.extend(comp_data.get("suggestions", []))
     all_suggestions = list(dict.fromkeys(all_suggestions))
 
+    # 6. Generate Editor Notes
+    editor_notes = geo_res.get("editor_notes") if geo_res and "editor_notes" in geo_res else " ".join(all_suggestions) if all_suggestions else "Artikel sudah cukup baik, tidak ada catatan khusus."
+
     return {
         "status": "success",
         "data": {
@@ -133,7 +139,7 @@ def analyze_url(payload: URLAnalysisRequest):
                 "seo_title": title,
                 "meta_description": text[:150] + "..." if text else ""
             },
-            "editor_notes": "Analisis ini dihasilkan oleh FastAPI SEO Engine via URL.",
+            "editor_notes": editor_notes,
             "url_metadata": {
                 "url": payload.url,
                 "title": title,
