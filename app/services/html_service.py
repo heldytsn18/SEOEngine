@@ -34,7 +34,7 @@ def analyze_html_structure(html_content: str, keyword: str, base_url: Optional[s
     images_with_alt = []
 
     for img in images:
-        src = img.get("src", img.get("data-src", ""))
+        src = img.get("src") or img.get("data-src") or "[Gambar tanpa URL]"
         alt = img.get("alt", "").strip()
         if not alt:
             images_without_alt.append(src)
