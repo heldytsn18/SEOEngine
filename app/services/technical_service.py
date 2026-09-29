@@ -70,16 +70,20 @@ def analyze_technical_seo(title: str, content: str, keyword: str) -> Dict[str, A
         score -= 15
         suggestions.append(f"Jumlah kata ({total_words} kata) terlalu pendek untuk artikel berita. Minimal 300 kata.")
 
+    # 4. Lede Analysis (50 kata pertama)
+    lede_words = words[:50]
+    keyword_in_lede = all(w in lede_words for w in keyword_words) if keyword_words else False
+
     return {
         "seo_score": max(score, 0),
         "readability_score": min(100, max(0, 100 - (20 if total_words < 300 else 0))),
         "headline_score": 100 if (40 <= title_len <= 70 and keyword_in_title) else (70 if keyword_in_title else 40),
         "headline_issues": [s for s in suggestions if "judul" in s.lower() or "judul" in s.lower()],
         "headline_suggestion": "Perbaiki judul agar mengandung kata kunci dan panjangnya 50-65 karakter." if not keyword_in_title or title_len < 40 or title_len > 70 else "",
-        "lede_quality": "Good" if len(found_elements) >= 3 else "Needs Improvement",
+        "lede_quality": "Bagus" if len(found_elements) >= 3 else "Perlu Perbaikan",
         "lede_word_count": min(total_words, 50),
         "lede_has_5w1h": len(found_elements) > 0,
-        "lede_has_keyword": keyword_in_title, # using title as proxy or we can check first 50 words
+        "lede_has_keyword": keyword_in_lede,
         "keyword_density": density,
         "keyword_density_status": "Ideal" if 1.0 <= density <= 2.5 else ("Terlalu rendah" if density < 1.0 else "Terlalu tinggi"),
         "technical_suggestions": suggestions

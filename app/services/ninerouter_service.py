@@ -82,5 +82,6 @@ Berikan output JSON SAJA tanpa penjelasan tambahan, dengan struktur format:
             "experience": { "score": 0, "has_firsthand_experience": False, "suggestions": [] },
             "expertise": { "score": 0, "has_expert_sources": False, "has_data_statistics": False, "suggestions": [] },
             "authoritativeness": { "score": 0, "has_official_sources": False, "has_citations": False, "suggestions": [] },
-            "trustworthiness": { "score": 0, "is_balanced": False, "has_verification": False, "suggestions": [f"Gagal menghubungkan ke 9Router AI: {str(e)}"] }
+            "trustworthiness": { "score": 0, "is_balanced": False, "has_verification": False, "suggestions": [f"Gagal menghubungkan ke 9Router AI: {str(e)}"] },
+            "editor_notes": "Analisis AI gagal. Terapkan standar penulisan berita konvensional (Cek tanggal, 5W1H, panjang judul)."
         }

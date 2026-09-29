@@ -8,6 +8,14 @@ from app.services.schema_service import generate_newsarticle_jsonld, render_html
 
 router = APIRouter(prefix="/api/v1/seo", tags=["SEO Engine"])
 
+DEFAULT_EEAT_ANALYSIS = {
+    "eeat_score": 0,
+    "experience": { "score": 0, "has_firsthand_experience": False, "suggestions": [] },
+    "expertise": { "score": 0, "has_expert_sources": False, "has_data_statistics": False, "suggestions": [] },
+    "authoritativeness": { "score": 0, "has_official_sources": False, "has_citations": False, "suggestions": [] },
+    "trustworthiness": { "score": 0, "is_balanced": False, "has_verification": False, "suggestions": [] }
+}
+
 
 @router.post("/analyze")
 def analyze_article(payload: ArticleAnalysisRequest):
@@ -47,13 +55,7 @@ def analyze_article(payload: ArticleAnalysisRequest):
         "status": "success",
         "data": {
             "news_analysis": technical_res,
-            "eeat_analysis": geo_res if geo_res else {
-                "eeat_score": 0,
-                "experience": { "score": 0, "has_firsthand_experience": False, "suggestions": [] },
-                "expertise": { "score": 0, "has_expert_sources": False, "has_data_statistics": False, "suggestions": [] },
-                "authoritativeness": { "score": 0, "has_official_sources": False, "has_citations": False, "suggestions": [] },
-                "trustworthiness": { "score": 0, "is_balanced": False, "has_verification": False, "suggestions": [] }
-            },
+            "eeat_analysis": geo_res if geo_res else DEFAULT_EEAT_ANALYSIS,
             "seo_suggestions": {
                 "focus_keyword": payload.focus_keyword,
                 "seo_title": payload.title,
@@ -127,13 +129,7 @@ def analyze_url(payload: URLAnalysisRequest):
         "status": "success",
         "data": {
             "news_analysis": technical_res,
-            "eeat_analysis": geo_res if geo_res else {
-                "eeat_score": 0,
-                "experience": { "score": 0, "has_firsthand_experience": False, "suggestions": [] },
-                "expertise": { "score": 0, "has_expert_sources": False, "has_data_statistics": False, "suggestions": [] },
-                "authoritativeness": { "score": 0, "has_official_sources": False, "has_citations": False, "suggestions": [] },
-                "trustworthiness": { "score": 0, "is_balanced": False, "has_verification": False, "suggestions": [] }
-            },
+            "eeat_analysis": geo_res if geo_res else DEFAULT_EEAT_ANALYSIS,
             "seo_suggestions": {
                 "focus_keyword": payload.focus_keyword,
                 "seo_title": title,
