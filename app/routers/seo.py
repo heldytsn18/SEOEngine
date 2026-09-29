@@ -27,7 +27,7 @@ def analyze_article(payload: ArticleAnalysisRequest):
         raise HTTPException(status_code=400, detail=technical_res["error"])
 
     # 2. Jalankan Analisis Struktur HTML
-    html_res = analyze_html_structure(payload.content, payload.focus_keyword)
+    html_res = analyze_html_structure(payload.content, payload.focus_keyword, base_url=payload.base_url)
 
     # 3. Jalankan Analisis GEO via 9Router (Opsional)
     geo_res = {}

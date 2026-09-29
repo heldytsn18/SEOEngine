@@ -8,6 +8,7 @@ class ArticleAnalysisRequest(BaseModel):
     focus_keyword: str = Field(..., examples=["Judi Online Kaltim"])
     category: Optional[str] = Field(None, examples=["Hukum"])
     use_ai_analysis: Optional[bool] = Field(True, description="Sertakan analisis GEO & E-E-A-T via 9Router")
+    base_url: Optional[str] = Field(None, description="URL situs utama untuk deteksi link internal (opsional)", examples=["https://borneoflash.com"])
 
 
 class URLAnalysisRequest(BaseModel):

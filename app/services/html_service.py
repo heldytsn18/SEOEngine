@@ -51,6 +51,8 @@ def analyze_html_structure(html_content: str, keyword: str, base_url: Optional[s
     if base_url:
         parsed_base = urlparse(base_url)
         base_domain = parsed_base.netloc.lower()
+        if base_domain.startswith("www."):
+            base_domain = base_domain[4:]
 
     for link in links:
         href = link["href"]
@@ -61,6 +63,8 @@ def analyze_html_structure(html_content: str, keyword: str, base_url: Optional[s
 
         parsed = urlparse(href)
         link_domain = parsed.netloc.lower()
+        if link_domain.startswith("www."):
+            link_domain = link_domain[4:]
 
         if not link_domain or link_domain == base_domain:
             internal_links.append({"href": href, "text": link_text})
