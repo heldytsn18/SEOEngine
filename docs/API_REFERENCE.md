@@ -90,7 +90,7 @@ Analisis draf artikel berita: skor teknis SEO, struktur HTML, dan evaluasi GEO/E
       "headline_score": 100,
       "headline_issues": [],
       "headline_suggestion": "",
-      "lede_quality": "Good",
+      "lede_quality": "Bagus",
       "lede_word_count": 50,
       "lede_has_5w1h": true,
       "lede_has_keyword": true,
@@ -190,10 +190,10 @@ Analisis draf artikel berita: skor teknis SEO, struktur HTML, dan evaluasi GEO/E
 | `headline_score` | integer | Skor judul (40/70/100) |
 | `headline_issues` | array | Masalah spesifik pada judul |
 | `headline_suggestion` | string | Saran perbaikan judul (kosong jika sudah baik) |
-| `lede_quality` | string | `"Good"` atau `"Needs Improvement"` |
+| `lede_quality` | string | `"Bagus"` atau `"Perlu Perbaikan"` |
 | `lede_word_count` | integer | Jumlah kata di lead (max 50) |
 | `lede_has_5w1h` | boolean | Apakah mengandung elemen 5W1H |
-| `lede_has_keyword` | boolean | Apakah keyword ada di judul |
+| `lede_has_keyword` | boolean | Apakah keyword ada di 50 kata pertama (lead paragraf) |
 | `keyword_density` | float | Persentase kerapatan kata kunci |
 | `keyword_density_status` | string | `"Ideal"`, `"Terlalu rendah"`, atau `"Terlalu tinggi"` |
 | `technical_suggestions` | array | Daftar saran perbaikan teknis |
