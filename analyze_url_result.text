@@ -1,0 +1,134 @@
+{
+  "status": "success",
+  "data": {
+    "news_analysis": {
+      "seo_score": 85,
+      "readability_score": 80,
+      "headline_score": 100,
+      "headline_issues": [],
+      "headline_suggestion": "",
+      "lede_quality": "Perlu Perbaikan",
+      "lede_word_count": 50,
+      "lede_has_5w1h": true,
+      "lede_has_keyword": true,
+      "keyword_density": 0.89,
+      "keyword_density_status": "Terlalu rendah",
+      "technical_suggestions": [
+        "Jumlah kata (224 kata) terlalu pendek untuk artikel berita. Minimal 300 kata."
+      ]
+    },
+    "eeat_analysis": {
+      "eeat_score": 77,
+      "experience": {
+        "score": 70,
+        "has_firsthand_experience": false,
+        "suggestions": [
+          "Tambah kutipan peneliti UI",
+          "Wartawan lapor langsung"
+        ]
+      },
+      "expertise": {
+        "score": 75,
+        "has_expert_sources": true,
+        "has_data_statistics": false,
+        "suggestions": [
+          "Tambah data narkoba BNN",
+          "Sebut nama peneliti UI"
+        ]
+      },
+      "authoritativeness": {
+        "score": 85,
+        "has_official_sources": true,
+        "has_citations": false,
+        "suggestions": [
+          "Beri link situs BNN",
+          "Beri link riset UI"
+        ]
+      },
+      "trustworthiness": {
+        "score": 80,
+        "is_balanced": true,
+        "has_verification": false,
+        "suggestions": [
+          "Cek fakta klaim riset",
+          "Tambah konteks urgensi"
+        ]
+      },
+      "editor_notes": "Artikel kurang data. Tambah statistik narkoba BNN. Sebut nama peneliti UI. Beri link sumber resmi. Kata kunci 'prabowo' ada. Butuh konteks kebijakan. Cek fakta riset."
+    },
+    "seo_suggestions": {
+      "focus_keyword": "prabowo",
+      "seo_title": "Prabowo Panggil Brian Yuliarto dan Kepala BNN Bahas Penanganan Narkoba",
+      "meta_description": "BorneoFlash.com, JAKARTA - Presiden Prabowo Subianto memanggil sejumlah pejabat ke Kompleks Istana Kepresidenan, Jakarta, Selasa, untuk membahas upaya..."
+    },
+    "editor_notes": "Artikel kurang data. Tambah statistik narkoba BNN. Sebut nama peneliti UI. Beri link sumber resmi. Kata kunci 'prabowo' ada. Butuh konteks kebijakan. Cek fakta riset.",
+    "url_metadata": {
+      "url": "https://borneoflash.com/2026/09/29/prabowo-panggil-brian-yuliarto-dan-kepala-bnn-bahas-penanganan-narkoba",
+      "title": "Prabowo Panggil Brian Yuliarto dan Kepala BNN Bahas Penanganan Narkoba",
+      "authors": [
+        "Wahyuddin Nurhidayat"
+      ],
+      "publish_date": "2026-09-29 00:00:00",
+      "top_image": "https://borneoflash.com/files/uploads/2026/09/file_00000000cc888209a7cf61c742c2d90a_og.jpg?v=84c61ecd388121342abf99d5c5c5ed76"
+    },
+    "overall_score": 82,
+    "html_structure_analysis": {
+      "headings": {
+        "h2_count": 0,
+        "h3_count": 3,
+        "h2_texts": [],
+        "h3_texts": [
+          "Komentar (0)",
+          "Berita: 28 September 2026",
+          "Tetap Update dengan Berita Terbaru"
+        ],
+        "keyword_in_subheading": false
+      },
+      "images": {
+        "total": 20,
+        "with_alt": 17,
+        "without_alt": 3,
+        "missing_alt_sources": [
+          "https://borneoflash.com/files/uploads/2026/04/CLICK-HERE.webp",
+          "https://borneoflash.com/files/uploads/2026/04/arsip.webp",
+          "[Gambar tanpa URL]"
+        ]
+      },
+      "links": {
+        "internal_count": 133,
+        "external_count": 24,
+        "external_domains": [
+          "api.whatsapp.com",
+          "epaper.borneoflash.com",
+          "facebook.com",
+          "instagram.com",
+          "news.google.com",
+          "pinterest.com",
+          "t.me",
+          "twitter.com",
+          "wa.me",
+          "x.com",
+          "youtube.com"
+        ]
+      },
+      "html_suggestions": [
+        "Kata kunci fokus tidak ditemukan di subheading (<h2>/<h3>). Sisipkan kata kunci di minimal satu subheading.",
+        "3 dari 20 gambar tidak memiliki atribut alt. Tambahkan alt text deskriptif."
+      ]
+    },
+    "combined_suggestions": [
+      "Jumlah kata (224 kata) terlalu pendek untuk artikel berita. Minimal 300 kata.",
+      "Kata kunci fokus tidak ditemukan di subheading (<h2>/<h3>). Sisipkan kata kunci di minimal satu subheading.",
+      "3 dari 20 gambar tidak memiliki atribut alt. Tambahkan alt text deskriptif.",
+      "Tambah kutipan peneliti UI",
+      "Wartawan lapor langsung",
+      "Tambah data narkoba BNN",
+      "Sebut nama peneliti UI",
+      "Beri link situs BNN",
+      "Beri link riset UI",
+      "Cek fakta klaim riset",
+      "Tambah konteks urgensi"
+    ]
+  },
+  "provider": "fastapi"
+}

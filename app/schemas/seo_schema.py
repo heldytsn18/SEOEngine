@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 class ArticleAnalysisRequest(BaseModel):
     title: str = Field(..., examples=["Polri Tindak Lanjut Judi Online di Kaltim"])
     content: str = Field(..., examples=["Balikpapan - Kepolisian Daerah Kalimantan Timur melakukan tindakan tegas..."])
-    focus_keyword: str = Field(..., examples=["Judi Online Kaltim"])
+    focus_keyword: Optional[str] = Field(None, description="Kata kunci fokus SEO (opsional, akan di-generate otomatis oleh AI jika kosong)", examples=["Judi Online Kaltim"])
     category: Optional[str] = Field(None, examples=["Hukum"])
     use_ai_analysis: Optional[bool] = Field(True, description="Sertakan analisis GEO & E-E-A-T via 9Router")
     base_url: Optional[str] = Field(None, description="URL situs utama untuk deteksi link internal (opsional)", examples=["https://borneoflash.com"])
@@ -13,7 +13,7 @@ class ArticleAnalysisRequest(BaseModel):
 
 class URLAnalysisRequest(BaseModel):
     url: str = Field(..., examples=["https://kaltimtoday.co/berita-judi-online"])
-    focus_keyword: str = Field(..., examples=["Judi Online Kaltim"])
+    focus_keyword: Optional[str] = Field(None, description="Kata kunci fokus (opsional, akan diekstrak otomatis jika kosong)", examples=["Judi Online Kaltim"])
     use_ai_analysis: Optional[bool] = Field(True, description="Sertakan analisis GEO & E-E-A-T via 9Router")
 
 

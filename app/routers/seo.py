@@ -1,7 +1,11 @@
 from fastapi import APIRouter, HTTPException
 
 from app.schemas.seo_schema import ArticleAnalysisRequest, URLAnalysisRequest, SchemaJSONLDRequest
-from app.services.technical_service import analyze_technical_seo
+from app.services.technical_service import (
+    analyze_technical_seo,
+    extract_focus_keyword_heuristic,
+    generate_heuristic_meta
+)
 from app.services.html_service import analyze_html_structure
 from app.services.ninerouter_service import call_9router_for_geo
 from app.services.schema_service import generate_newsarticle_jsonld, render_html_snippet
@@ -19,22 +23,39 @@ DEFAULT_EEAT_ANALYSIS = {
 
 @router.post("/analyze")
 def analyze_article(payload: ArticleAnalysisRequest):
-    """Analisis draf artikel: teknis SEO + struktur HTML + GEO/E-E-A-T."""
-    # 1. Jalankan Analisis Teknis Lokal (Sastrawi + Rule-Based)
-    technical_res = analyze_technical_seo(payload.title, payload.content, payload.focus_keyword)
+    """Analisis draf artikel: Generate metadata -> teknis SEO + struktur HTML + GEO/E-E-A-T."""
+    active_keyword = (payload.focus_keyword or "").strip()
+    geo_res = {}
 
+    # 1. Jalankan Analisis GEO via 9Router (AI juga menghasilkan focus_keyword, seo_title, meta_description)
+    if payload.use_ai_analysis:
+        geo_res = call_9router_for_geo(payload.title, payload.content, active_keyword)
+        # Jika keyword awal kosong tapi AI berhasil generate focus_keyword, gunakan hasil AI
+        if not active_keyword and geo_res.get("focus_keyword"):
+            active_keyword = geo_res["focus_keyword"].strip()
+
+    # 2. Jika keyword masih kosong (AI nonaktif atau gagal), gunakan ekstraksi heuristik lokal
+    if not active_keyword:
+        active_keyword = extract_focus_keyword_heuristic(payload.title, payload.content)
+
+    # 3. Jalankan Analisis Teknis Lokal (Sastrawi + Rule-Based) menggunakan active_keyword
+    technical_res = analyze_technical_seo(payload.title, payload.content, active_keyword)
     if "error" in technical_res:
         raise HTTPException(status_code=400, detail=technical_res["error"])
 
-    # 2. Jalankan Analisis Struktur HTML
-    html_res = analyze_html_structure(payload.content, payload.focus_keyword, base_url=payload.base_url)
+    # 4. Jalankan Analisis Struktur HTML
+    html_res = analyze_html_structure(payload.content, active_keyword, base_url=payload.base_url)
 
-    # 3. Jalankan Analisis GEO via 9Router (Opsional)
-    geo_res = {}
-    if payload.use_ai_analysis:
-        geo_res = call_9router_for_geo(payload.title, payload.content, payload.focus_keyword)
+    # 5. Tentukan saran SEO (prioritaskan hasil AI jika ada, fallback ke heuristik lokal)
+    if geo_res and geo_res.get("seo_title"):
+        suggested_title = geo_res.get("seo_title") or payload.title
+        suggested_meta = geo_res.get("meta_description") or (payload.content[:150] + "..." if payload.content else "")
+    else:
+        heuristic_meta = generate_heuristic_meta(payload.title, payload.content, active_keyword)
+        suggested_title = heuristic_meta["seo_title"]
+        suggested_meta = heuristic_meta["meta_description"]
 
-    # 4. Hitung Agregat Skor Akhir
+    # 6. Hitung Agregat Skor Akhir
     tech_score = technical_res.get("seo_score", 0)
     eeat_score = geo_res.get("eeat_score", 0) if geo_res else tech_score
     overall_score = round((tech_score * 0.6) + (eeat_score * 0.4)) if geo_res else tech_score
@@ -45,10 +66,9 @@ def analyze_article(payload: ArticleAnalysisRequest):
         for component in ("experience", "expertise", "authoritativeness", "trustworthiness"):
             comp_data = geo_res.get(component, {})
             all_suggestions.extend(comp_data.get("suggestions", []))
-    # Hapus duplikasi, pertahankan urutan
     all_suggestions = list(dict.fromkeys(all_suggestions))
 
-    # 5. Generate Editor Notes
+    # 7. Generate Editor Notes
     editor_notes = geo_res.get("editor_notes") if geo_res and "editor_notes" in geo_res else " ".join(all_suggestions) if all_suggestions else "Artikel sudah cukup baik, tidak ada catatan khusus."
 
     return {
@@ -57,9 +77,9 @@ def analyze_article(payload: ArticleAnalysisRequest):
             "news_analysis": technical_res,
             "eeat_analysis": geo_res if geo_res else DEFAULT_EEAT_ANALYSIS,
             "seo_suggestions": {
-                "focus_keyword": payload.focus_keyword,
-                "seo_title": payload.title,
-                "meta_description": payload.content[:150] + "..." if payload.content else ""
+                "focus_keyword": active_keyword,
+                "seo_title": suggested_title,
+                "meta_description": suggested_meta
             },
             "editor_notes": editor_notes,
             "overall_score": overall_score,
@@ -96,20 +116,27 @@ def analyze_url(payload: URLAnalysisRequest):
     if not text.strip():
         raise HTTPException(status_code=400, detail="Tidak ada konten teks yang berhasil diekstrak dari URL.")
 
-    # 2. Jalankan Analisis Teknis
-    technical_res = analyze_technical_seo(title, text, payload.focus_keyword)
-
-    # 3. Jalankan Analisis Struktur HTML
-    html_res = analyze_html_structure(html, payload.focus_keyword, base_url=payload.url)
-
-    # 4. Jalankan Analisis GEO via 9Router (Opsional)
+    active_keyword = (payload.focus_keyword or "").strip()
     geo_res = {}
-    if payload.use_ai_analysis:
-        # Batasi konten ke 3000 karakter agar tidak terlalu besar untuk prompt AI
-        truncated_text = text[:3000]
-        geo_res = call_9router_for_geo(title, truncated_text, payload.focus_keyword)
 
-    # 5. Hitung Agregat Skor
+    # 2. Jalankan Analisis GEO via 9Router (Opsional)
+    if payload.use_ai_analysis:
+        truncated_text = text[:3000]
+        geo_res = call_9router_for_geo(title, truncated_text, active_keyword)
+        if not active_keyword and geo_res.get("focus_keyword"):
+            active_keyword = geo_res["focus_keyword"].strip()
+
+    # 3. Fallback jika keyword masih kosong
+    if not active_keyword:
+        active_keyword = extract_focus_keyword_heuristic(title, text)
+
+    # 4. Jalankan Analisis Teknis
+    technical_res = analyze_technical_seo(title, text, active_keyword)
+
+    # 5. Jalankan Analisis Struktur HTML
+    html_res = analyze_html_structure(html, active_keyword, base_url=payload.url)
+
+    # 6. Hitung Agregat Skor
     tech_score = technical_res.get("seo_score", 0)
     eeat_score = geo_res.get("eeat_score", 0) if geo_res else tech_score
     overall_score = round((tech_score * 0.6) + (eeat_score * 0.4)) if geo_res else tech_score
@@ -122,8 +149,11 @@ def analyze_url(payload: URLAnalysisRequest):
             all_suggestions.extend(comp_data.get("suggestions", []))
     all_suggestions = list(dict.fromkeys(all_suggestions))
 
-    # 6. Generate Editor Notes
+    # 7. Generate Editor Notes & Suggestions
     editor_notes = geo_res.get("editor_notes") if geo_res and "editor_notes" in geo_res else " ".join(all_suggestions) if all_suggestions else "Artikel sudah cukup baik, tidak ada catatan khusus."
+
+    suggested_title = geo_res.get("seo_title") or title
+    suggested_meta = geo_res.get("meta_description") or (text[:150] + "..." if text else "")
 
     return {
         "status": "success",
@@ -131,9 +161,9 @@ def analyze_url(payload: URLAnalysisRequest):
             "news_analysis": technical_res,
             "eeat_analysis": geo_res if geo_res else DEFAULT_EEAT_ANALYSIS,
             "seo_suggestions": {
-                "focus_keyword": payload.focus_keyword,
-                "seo_title": title,
-                "meta_description": text[:150] + "..." if text else ""
+                "focus_keyword": active_keyword,
+                "seo_title": suggested_title,
+                "meta_description": suggested_meta
             },
             "editor_notes": editor_notes,
             "url_metadata": {

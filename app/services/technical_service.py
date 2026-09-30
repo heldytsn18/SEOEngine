@@ -18,8 +18,63 @@ def clean_text(text: str) -> str:
     return clean.lower().strip()
 
 
-def analyze_technical_seo(title: str, content: str, keyword: str) -> Dict[str, Any]:
+def extract_focus_keyword_heuristic(title: str, content: str = "") -> str:
+    """Ekstraksi kata kunci fokus heuristik dari judul berita jika tidak ada AI."""
+    if not title:
+        return ""
+
+    # Bersihkan tanda baca khusus
+    cleaned = re.sub(r'[\?!:;"\'\(\)\[\]\{\}]', '', title).strip()
+
+    # Pisahkan berdasarkan tanda hubung, pipe, atau koma untuk mencari klausa subjek utama
+    parts = re.split(r'\s*[-|,]\s*', cleaned)
+    main_part = parts[0].strip() if parts else cleaned
+
+    words = [w for w in main_part.split() if w.strip()]
+    if not words:
+        words = [w for w in cleaned.split() if w.strip()]
+
+    # Buang stopword di awal dan akhir frasa
+    while words and words[0].lower() in STOPWORDS_ID:
+        words.pop(0)
+    while words and words[-1].lower() in STOPWORDS_ID:
+        words.pop()
+
+    candidate = " ".join(words[:4]) if len(words) >= 4 else " ".join(words)
+    return candidate.strip() or title[:30].strip()
+
+
+def generate_heuristic_meta(title: str, content: str, keyword: str = "") -> Dict[str, str]:
+    """Generate judul SEO dan meta description fallback lokal jika AI tidak aktif."""
+    clean_c = clean_text(content)
+    raw_sentences = [s.strip() for s in re.split(r'[\.\n]+', clean_c) if s.strip()]
+    desc = ""
+    for s in raw_sentences:
+        if len(desc) + len(s) + 1 <= 155:
+            desc = (desc + " " + s).strip()
+        else:
+            break
+    if not desc and raw_sentences:
+        desc = raw_sentences[0][:155]
+    if not desc:
+        desc = (title + " - Baca berita dan ulasan selengkapnya di BorneoFlash.")[:155]
+
+    seo_title = title.strip()
+    if len(seo_title) > 60:
+        seo_title = seo_title[:57] + "..."
+
+    return {
+        "focus_keyword": keyword or extract_focus_keyword_heuristic(title, content),
+        "seo_title": seo_title,
+        "meta_description": desc
+    }
+
+
+def analyze_technical_seo(title: str, content: str, keyword: str = "") -> Dict[str, Any]:
     """Analisis teknis lokal menggunakan PySastrawi dan Aturan Heuristik."""
+    if not keyword or not keyword.strip():
+        keyword = extract_focus_keyword_heuristic(title, content)
+
     cleaned_content = clean_text(content)
     cleaned_title = clean_text(title)
     cleaned_keyword = clean_text(keyword)
