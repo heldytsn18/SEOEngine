@@ -114,9 +114,12 @@ def analyze_technical_seo(title: str, content: str, keyword: str = "") -> Dict[s
         score -= 15
         suggestions.append(f"Kata kunci fokus '{keyword}' tidak ditemukan di dalam judul.")
 
-    if density < 0.8:
+    if keyword_count == 0:
+        score -= 15
+        suggestions.append(f"Kata kunci fokus '{keyword}' belum tertulis di dalam naskah berita (ditemukan 0 kali / 0.0%). Ketik frasa '{keyword}' atau kata turunannya di paragraf pembuka (lead) dan minimal 1 paragraf isi agar terdeteksi mesin pencari.")
+    elif density < 0.8:
         score -= 10
-        suggestions.append(f"Kerapatan kata kunci '{keyword}' terlalu rendah ({density}%). Target ideal: 1% - 2.5% (sisipkan kata kunci fokus secara natural di 2-3 paragraf).")
+        suggestions.append(f"Kerapatan kata kunci '{keyword}' masih rendah ({density}%). Target ideal: 1% - 2.5% (tambahkan penyebutan frasa '{keyword}' di 1-2 paragraf lagi).")
     elif density > 3.0:
         score -= 20
         suggestions.append(f"Terlalu banyak kata kunci '{keyword}' / Keyword Stuffing ({density}%). Kurangi pengulangan kata kunci agar lebih natural.")
