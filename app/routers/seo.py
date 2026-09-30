@@ -55,12 +55,20 @@ def analyze_article(payload: ArticleAnalysisRequest):
         suggested_title = heuristic_meta["seo_title"]
         suggested_meta = heuristic_meta["meta_description"]
 
+    # Perbarui headline_suggestion dengan rekomendasi judul konkret
+    if technical_res.get("headline_issues") or technical_res.get("headline_score", 100) < 100:
+        technical_res["headline_suggestion"] = f"Gunakan judul alternatif: \"{suggested_title}\""
+
     # 6. Hitung Agregat Skor Akhir
     tech_score = technical_res.get("seo_score", 0)
     eeat_score = geo_res.get("eeat_score", 0) if geo_res else tech_score
     overall_score = round((tech_score * 0.6) + (eeat_score * 0.4)) if geo_res else tech_score
 
-    all_suggestions = technical_res.get("technical_suggestions", [])[:]
+    all_suggestions = []
+    # Berikan rekomendasi judul konkret di urutan teratas jika judul belum ideal
+    if technical_res.get("headline_issues") or technical_res.get("headline_score", 100) < 100:
+        all_suggestions.append(f"Saran judul: {suggested_title}")
+    all_suggestions.extend(technical_res.get("technical_suggestions", []))
     all_suggestions.extend(html_res.get("html_suggestions", []))
     if geo_res:
         for component in ("experience", "expertise", "authoritativeness", "trustworthiness"):
@@ -136,12 +144,23 @@ def analyze_url(payload: URLAnalysisRequest):
     # 5. Jalankan Analisis Struktur HTML
     html_res = analyze_html_structure(html, active_keyword, base_url=payload.url)
 
+    heuristic_meta = generate_heuristic_meta(title, text, active_keyword)
+    suggested_title = geo_res.get("seo_title") or heuristic_meta["seo_title"]
+    suggested_meta = geo_res.get("meta_description") or heuristic_meta["meta_description"]
+
+    # Perbarui headline_suggestion dengan rekomendasi judul konkret
+    if technical_res.get("headline_issues") or technical_res.get("headline_score", 100) < 100:
+        technical_res["headline_suggestion"] = f"Gunakan judul alternatif: \"{suggested_title}\""
+
     # 6. Hitung Agregat Skor
     tech_score = technical_res.get("seo_score", 0)
     eeat_score = geo_res.get("eeat_score", 0) if geo_res else tech_score
     overall_score = round((tech_score * 0.6) + (eeat_score * 0.4)) if geo_res else tech_score
 
-    all_suggestions = technical_res.get("technical_suggestions", [])[:]
+    all_suggestions = []
+    if technical_res.get("headline_issues") or technical_res.get("headline_score", 100) < 100:
+        all_suggestions.append(f"Saran judul: {suggested_title}")
+    all_suggestions.extend(technical_res.get("technical_suggestions", []))
     all_suggestions.extend(html_res.get("html_suggestions", []))
     if geo_res:
         for component in ("experience", "expertise", "authoritativeness", "trustworthiness"):
@@ -151,10 +170,6 @@ def analyze_url(payload: URLAnalysisRequest):
 
     # 7. Generate Editor Notes & Suggestions
     editor_notes = geo_res.get("editor_notes") if geo_res and "editor_notes" in geo_res else " ".join(all_suggestions) if all_suggestions else "Artikel sudah cukup baik, tidak ada catatan khusus."
-
-    heuristic_meta = generate_heuristic_meta(title, text, active_keyword)
-    suggested_title = geo_res.get("seo_title") or heuristic_meta["seo_title"]
-    suggested_meta = geo_res.get("meta_description") or heuristic_meta["meta_description"]
 
     return {
         "status": "success",

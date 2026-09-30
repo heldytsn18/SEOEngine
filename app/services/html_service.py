@@ -74,20 +74,20 @@ def analyze_html_structure(html_content: str, keyword: str, base_url: Optional[s
 
     # --- Skor & Saran ---
     suggestions = []
+    kw_display = keyword.strip() if keyword else "Topik Berita"
 
     if total_subheadings == 0:
-        suggestions.append("Tidak ditemukan tag <h2> atau <h3>. Tambahkan subheading untuk struktur konten yang lebih baik.")
-
-    if not keyword_in_subheading and total_subheadings > 0:
-        suggestions.append("Kata kunci fokus tidak ditemukan di subheading (<h2>/<h3>). Sisipkan kata kunci di minimal satu subheading.")
+        suggestions.append(f"Tidak ditemukan tag <h2> atau <h3>. Tambahkan subheading untuk memecah struktur artikel, contoh: <h2>Latar Belakang dan Dampak {kw_display}</h2>.")
+    elif not keyword_in_subheading:
+        suggestions.append(f"Kata kunci fokus belum ada di subheading. Sisipkan kata kunci di minimal satu subheading (<h2>/<h3>), contoh: <h2>Perkembangan {kw_display} Terkini</h2>.")
 
     if total_images == 0:
-        suggestions.append("Tidak ada gambar ditemukan. Tambahkan gambar pendukung untuk meningkatkan engagement.")
+        suggestions.append(f"Tidak ada gambar ditemukan. Tambahkan gambar pendukung dengan alt text relevan, contoh alt: 'Dokumentasi terkait {kw_display}'.")
     elif images_without_alt:
-        suggestions.append(f"{len(images_without_alt)} dari {total_images} gambar tidak memiliki atribut alt. Tambahkan alt text deskriptif.")
+        suggestions.append(f"{len(images_without_alt)} dari {total_images} gambar tidak memiliki atribut alt text. Tambahkan deskripsi gambar yang relevan dengan isi berita.")
 
     if len(external_links) == 0:
-        suggestions.append("Tidak ada external link ke sumber rujukan. Tambahkan link ke sumber resmi untuk meningkatkan E-E-A-T.")
+        suggestions.append("Tidak ada external link ke sumber rujukan. Tambahkan tautan ke sumber resmi (misal situs kementerian, BPS, atau instansi terkait) untuk memperkuat E-E-A-T.")
 
     return {
         "headings": {

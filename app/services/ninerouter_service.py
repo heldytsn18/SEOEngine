@@ -32,6 +32,16 @@ Judul: {title}
 {category_instruction}{keyword_instruction}
 Konten: {content}
 
+ATURAN PENTING PENULISAN SARAN:
+1. Berikan saran yang KONKRET, DETAIL, dan LENGKAP DENGAN CONTOH SOLUSI (Actionable Suggestions). JANGAN hanya menulis kritik kering atau kalimat pendek/terpotong-potong gaya telegraf/robotik.
+2. Setiap poin saran wajib menyertakan tindakan nyata beserta contoh kalimat/narasumber/data yang dapat langsung diterapkan:
+   - Experience: Jelaskan siapa yang perlu diwawancarai dan berikan contoh kutipannya (contoh: "Tambahkan wawancara peserta di lapangan untuk membuktikan dampak nyata, misal: 'Saya sangat terbantu dengan program ini untuk mengasah keterampilan praktis,' ungkap salah seorang peserta.").
+   - Expertise: Sebutkan bidang kepakaran atau data rujukan konkret yang perlu ditambahkan (contoh: "Kutip pandangan pengamat teknologi atau data riset untuk memvalidasi klaim efisiensi.").
+   - Authoritativeness: Sebutkan nama lembaga/instansi resmi atau tautan dokumen acuan yang relevan untuk ditautkan.
+   - Trustworthiness: Berikan saran cara menyeimbangkan perspektif berita (misal jika berita bersumber dari rilis pers sepihak, sarankan konfirmasi ke pihak pengamat independen atau masyarakat).
+3. Untuk "seo_title": Buat 1 judul alternatif terbaik (50-65 karakter) yang memuat kata kunci fokus dan menarik pembaca berita (contoh: "Kemnaker Dorong Generasi Muda Kuasai AI untuk Tingkatkan Produktivitas Kerja").
+4. Untuk "editor_notes": Buat paragraf ulasan redaksional yang mengalir profesional, ramah, dan membimbing penulis langkah demi langkah.
+
 Berikan output JSON SAJA tanpa penjelasan tambahan, dengan struktur format persis:
 {{
   "focus_keyword": "<1 frasa kunci fokus terbaik 2-4 kata, gunakan kata kunci penulis jika ada, atau tentukan yang paling relevan jika kosong>",
@@ -41,27 +51,27 @@ Berikan output JSON SAJA tanpa penjelasan tambahan, dengan struktur format persi
   "experience": {{
       "score": <angka 1-100>,
       "has_firsthand_experience": <true/false>,
-      "suggestions": ["<saran>"]
+      "suggestions": ["<Saran konkret beserta contoh nyata perbaikan>"]
   }},
   "expertise": {{
       "score": <angka 1-100>,
       "has_expert_sources": <true/false>,
       "has_data_statistics": <true/false>,
-      "suggestions": ["<saran>"]
+      "suggestions": ["<Saran konkret beserta contoh nyata perbaikan>"]
   }},
   "authoritativeness": {{
       "score": <angka 1-100>,
       "has_official_sources": <true/false>,
       "has_citations": <true/false>,
-      "suggestions": ["<saran>"]
+      "suggestions": ["<Saran konkret beserta contoh nyata perbaikan>"]
   }},
   "trustworthiness": {{
       "score": <angka 1-100>,
       "is_balanced": <true/false>,
       "has_verification": <true/false>,
-      "suggestions": ["<saran>"]
+      "suggestions": ["<Saran konkret beserta contoh nyata perbaikan>"]
   }},
-  "editor_notes": "<Paragraf kohesif berisi instruksi editor seperti cek tanggal, perpendek judul, tambahkan kutipan, dll>"
+  "editor_notes": "<Paragraf catatan editor yang mengalir profesional merangkum prioritas perbaikan beserta rekomendasi judul dan angle berita>"
 }}
 """
     try:
