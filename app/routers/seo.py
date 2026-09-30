@@ -29,7 +29,7 @@ def analyze_article(payload: ArticleAnalysisRequest):
 
     # 1. Jalankan Analisis GEO via 9Router (AI juga menghasilkan focus_keyword, seo_title, meta_description)
     if payload.use_ai_analysis:
-        geo_res = call_9router_for_geo(payload.title, payload.content, active_keyword)
+        geo_res = call_9router_for_geo(payload.title, payload.content, active_keyword, payload.category or "")
         # Jika keyword awal kosong tapi AI berhasil generate focus_keyword, gunakan hasil AI
         if not active_keyword and geo_res.get("focus_keyword"):
             active_keyword = geo_res["focus_keyword"].strip()
@@ -47,11 +47,11 @@ def analyze_article(payload: ArticleAnalysisRequest):
     html_res = analyze_html_structure(payload.content, active_keyword, base_url=payload.base_url)
 
     # 5. Tentukan saran SEO (prioritaskan hasil AI jika ada, fallback ke heuristik lokal)
+    heuristic_meta = generate_heuristic_meta(payload.title, payload.content, active_keyword)
     if geo_res and geo_res.get("seo_title"):
         suggested_title = geo_res.get("seo_title") or payload.title
-        suggested_meta = geo_res.get("meta_description") or (payload.content[:150] + "..." if payload.content else "")
+        suggested_meta = geo_res.get("meta_description") or heuristic_meta["meta_description"]
     else:
-        heuristic_meta = generate_heuristic_meta(payload.title, payload.content, active_keyword)
         suggested_title = heuristic_meta["seo_title"]
         suggested_meta = heuristic_meta["meta_description"]
 
@@ -152,8 +152,9 @@ def analyze_url(payload: URLAnalysisRequest):
     # 7. Generate Editor Notes & Suggestions
     editor_notes = geo_res.get("editor_notes") if geo_res and "editor_notes" in geo_res else " ".join(all_suggestions) if all_suggestions else "Artikel sudah cukup baik, tidak ada catatan khusus."
 
-    suggested_title = geo_res.get("seo_title") or title
-    suggested_meta = geo_res.get("meta_description") or (text[:150] + "..." if text else "")
+    heuristic_meta = generate_heuristic_meta(title, text, active_keyword)
+    suggested_title = geo_res.get("seo_title") or heuristic_meta["seo_title"]
+    suggested_meta = geo_res.get("meta_description") or heuristic_meta["meta_description"]
 
     return {
         "status": "success",

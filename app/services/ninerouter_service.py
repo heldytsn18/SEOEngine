@@ -14,13 +14,14 @@ NINEROUTER_URL = os.getenv("NINEROUTER_URL", "https://api.ninerouter.com/v1/chat
 NINEROUTER_API_KEY = os.getenv("NINEROUTER_API_KEY", "")
 
 
-def call_9router_for_geo(title: str, content: str, keyword: str = "") -> Dict[str, Any]:
+def call_9router_for_geo(title: str, content: str, keyword: str = "", category: str = "") -> Dict[str, Any]:
     """Panggil 9Router AI Proxy untuk evaluasi kualitatif GEO & E-E-A-T serta auto-generate SEO metadata."""
     current_date = datetime.now().strftime("%Y-%m-%d")
     keyword_text = keyword.strip() if keyword else ""
     keyword_instruction = f"Kata Kunci Fokus yang dimasukkan penulis: \"{keyword_text}\"" if keyword_text else (
         "Kata Kunci Fokus: (KOSONG - Anda WAJIB menganalisis judul dan konten, lalu menentukan 1 kata kunci/frasa fokus terbaik (2-4 kata) yang memiliki potensi pencarian tinggi di Google)."
     )
+    category_instruction = f"Kategori/Rubrik Berita: \"{category.strip()}\"\n" if category and category.strip() else ""
 
     prompt = f"""
 Bertindaklah sebagai Senior SEO Engine Evaluator & Editor Berita Indonesia.
@@ -28,7 +29,7 @@ Konteks Waktu: Hari ini adalah tanggal {current_date}. Jangan anggap tahun berja
 Evaluasi artikel berikut berdasarkan standar GEO (Generative Engine Optimization), E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness), dan praktik terbaik SEO Google.
 
 Judul: {title}
-{keyword_instruction}
+{category_instruction}{keyword_instruction}
 Konten: {content}
 
 Berikan output JSON SAJA tanpa penjelasan tambahan, dengan struktur format persis:

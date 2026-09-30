@@ -133,7 +133,7 @@ def analyze_technical_seo(title: str, content: str, keyword: str = "") -> Dict[s
         "seo_score": max(score, 0),
         "readability_score": min(100, max(0, 100 - (20 if total_words < 300 else 0))),
         "headline_score": 100 if (40 <= title_len <= 70 and keyword_in_title) else (70 if keyword_in_title else 40),
-        "headline_issues": [s for s in suggestions if "judul" in s.lower() or "judul" in s.lower()],
+        "headline_issues": [s for s in suggestions if "judul" in s.lower()],
         "headline_suggestion": "Perbaiki judul agar mengandung kata kunci dan panjangnya 50-65 karakter." if not keyword_in_title or title_len < 40 or title_len > 70 else "",
         "lede_quality": "Bagus" if len(found_elements) >= 3 else "Perlu Perbaikan",
         "lede_word_count": min(total_words, 50),
