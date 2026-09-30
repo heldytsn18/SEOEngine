@@ -77,9 +77,9 @@ def analyze_html_structure(html_content: str, keyword: str, base_url: Optional[s
     kw_display = keyword.strip() if keyword else "Topik Berita"
 
     if total_subheadings == 0:
-        suggestions.append(f"Tidak ditemukan tag <h2> atau <h3>. Tambahkan subheading untuk memecah struktur artikel, contoh: <h2>Latar Belakang dan Dampak {kw_display}</h2>.")
+        suggestions.append(f"Tidak ditemukan tag H2 atau H3. Tambahkan subheading untuk memecah struktur artikel, contoh: 'Latar Belakang dan Dampak {kw_display}'.")
     elif not keyword_in_subheading:
-        suggestions.append(f"Kata kunci fokus belum ada di subheading. Sisipkan kata kunci di minimal satu subheading (<h2>/<h3>), contoh: <h2>Perkembangan {kw_display} Terkini</h2>.")
+        suggestions.append(f"Kata kunci fokus belum ada di subheading. Sisipkan kata kunci di minimal satu subheading (H2/H3), contoh: 'Perkembangan {kw_display} Terkini'.")
 
     if total_images == 0:
         suggestions.append(f"Tidak ada gambar ditemukan. Tambahkan gambar pendukung dengan alt text relevan, contoh alt: 'Dokumentasi terkait {kw_display}'.")
