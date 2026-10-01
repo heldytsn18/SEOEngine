@@ -124,6 +124,12 @@ def analyze_url(payload: URLAnalysisRequest):
     if not text.strip():
         raise HTTPException(status_code=400, detail="Tidak ada konten teks yang berhasil diekstrak dari URL.")
 
+    # Deteksi apakah URL adalah web internal sendiri atau kompetitor
+    domain = extracted["domain"].lower()
+    is_own_site = payload.is_own_site
+    if is_own_site is None:
+        is_own_site = "borneoflash.com" in domain or "localhost" in domain
+
     active_keyword = (payload.focus_keyword or "").strip()
     meta_keywords = extracted.get("meta_keywords", [])
     geo_res = {}
@@ -131,9 +137,11 @@ def analyze_url(payload: URLAnalysisRequest):
     # 2. Jalankan Analisis GEO via 9Router (Opsional)
     if payload.use_ai_analysis:
         truncated_text = text[:3000]
-        geo_res = call_9router_for_geo(title, truncated_text, active_keyword, meta_keywords=meta_keywords)
+        geo_res = call_9router_for_geo(
+            title, truncated_text, active_keyword, meta_keywords=meta_keywords, is_own_site=is_own_site
+        )
 
-    # 3. Tentukan Kata Kunci yang Dipakai Kompetitor & Rekomendasi Kata Kunci Fokus
+    # 3. Tentukan Kata Kunci yang Dipakai Kompetitor/Halaman & Rekomendasi Kata Kunci Fokus
     detected_competitor_kw = ""
     recommended_focus_kw = ""
     keyword_variations = []
@@ -163,13 +171,19 @@ def analyze_url(payload: URLAnalysisRequest):
         recommended_focus_kw = active_keyword
         keyword_variations = geo_res.get("keyword_variations") or []
 
-    keyword_analysis = {
-        "user_provided_keyword": payload.focus_keyword or "",
-        "detected_competitor_keyword": detected_competitor_kw,
-        "recommended_focus_keyword": recommended_focus_kw,
-        "meta_keywords_from_page": meta_keywords,
-        "keyword_variations": keyword_variations,
-        "notes": (
+    if is_own_site:
+        notes_text = (
+            f"Kata kunci terdeteksi pada naskah artikel Anda: '{detected_competitor_kw}'. "
+            f"Rekomendasi kata kunci fokus terbaik untuk penguatan SEO: '{recommended_focus_kw}'."
+            if (detected_competitor_kw and recommended_focus_kw and detected_competitor_kw.lower() != recommended_focus_kw.lower())
+            else (
+                f"Rekomendasi kata kunci fokus SEO untuk artikel Anda: '{recommended_focus_kw}'."
+                if recommended_focus_kw
+                else "Kata kunci fokus telah ditentukan oleh pengguna."
+            )
+        )
+    else:
+        notes_text = (
             f"Kata kunci terdeteksi yang dibidik kompetitor: '{detected_competitor_kw}'. "
             f"Rekomendasi kata kunci fokus terbaik untuk SEO artikel Anda: '{recommended_focus_kw}'."
             if (detected_competitor_kw and recommended_focus_kw and detected_competitor_kw.lower() != recommended_focus_kw.lower())
@@ -179,13 +193,21 @@ def analyze_url(payload: URLAnalysisRequest):
                 else "Kata kunci fokus telah ditentukan oleh pengguna."
             )
         )
+
+    keyword_analysis = {
+        "user_provided_keyword": payload.focus_keyword or "",
+        "detected_competitor_keyword": detected_competitor_kw,
+        "recommended_focus_keyword": recommended_focus_kw,
+        "meta_keywords_from_page": meta_keywords,
+        "keyword_variations": keyword_variations,
+        "notes": notes_text
     }
 
     # 4. Jalankan Analisis Teknis
     technical_res = analyze_technical_seo(title, text, active_keyword)
 
-    # 5. Jalankan Analisis Struktur HTML
-    html_res = analyze_html_structure(html, active_keyword, base_url=payload.url)
+    # 5. Jalankan Analisis Struktur HTML (Scoped ke Badan Artikel)
+    html_res = analyze_html_structure(html, active_keyword, base_url=payload.url, is_own_site=is_own_site)
 
     heuristic_meta = generate_heuristic_meta(title, text, active_keyword)
     suggested_title = geo_res.get("seo_title") or heuristic_meta["seo_title"]
@@ -200,13 +222,13 @@ def analyze_url(payload: URLAnalysisRequest):
     eeat_score = geo_res.get("eeat_score", 0) if geo_res else tech_score
     overall_score = round((tech_score * 0.6) + (eeat_score * 0.4)) if geo_res else tech_score
 
-    # 7. Peluang Menyalip Kompetitor (Competitor Opportunities)
+    # 7. Peluang Menyalip Kompetitor / Rekomendasi Audit Internal
     opportunities = generate_competitor_opportunities(
-        extracted, technical_res, html_res, active_keyword, keyword_analysis=keyword_analysis
+        extracted, technical_res, html_res, active_keyword, keyword_analysis=keyword_analysis, is_own_site=is_own_site
     )
 
     all_suggestions = []
-    # Masukkan peluang kompetitor di posisi terdepan sebagai rekomendasi strategis
+    # Masukkan peluang / rekomendasi di posisi terdepan sebagai rekomendasi strategis
     all_suggestions.extend(opportunities)
 
     if technical_res.get("headline_issues") or technical_res.get("headline_score", 100) < 100:
@@ -237,6 +259,7 @@ def analyze_url(payload: URLAnalysisRequest):
             "url_metadata": {
                 "url": payload.url,
                 "domain": extracted["domain"],
+                "is_own_site": is_own_site,
                 "title": title,
                 "authors": extracted["authors"],
                 "publish_date": extracted["publish_date"],

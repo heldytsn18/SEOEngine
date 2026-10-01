@@ -15,6 +15,7 @@ class URLAnalysisRequest(BaseModel):
     url: str = Field(..., examples=["https://kaltimtoday.co/berita-judi-online"])
     focus_keyword: Optional[str] = Field(None, description="Kata kunci fokus (opsional, akan diekstrak otomatis jika kosong)", examples=["Judi Online Kaltim"])
     use_ai_analysis: Optional[bool] = Field(True, description="Sertakan analisis GEO & E-E-A-T via 9Router")
+    is_own_site: Optional[bool] = Field(None, description="Set True jika URL adalah web sendiri (BorneoFlash), False jika kompetitor. Default None (auto-detect domain)", examples=[False])
 
 
 class SchemaJSONLDRequest(BaseModel):

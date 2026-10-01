@@ -19,25 +19,28 @@ def call_9router_for_geo(
     content: str,
     keyword: str = "",
     category: str = "",
-    meta_keywords: Optional[list] = None
+    meta_keywords: Optional[list] = None,
+    is_own_site: bool = False
 ) -> Dict[str, Any]:
     """Panggil 9Router AI Proxy untuk evaluasi kualitatif GEO & E-E-A-T serta auto-generate SEO metadata."""
     current_date = datetime.now().strftime("%Y-%m-%d")
     keyword_text = keyword.strip() if keyword else ""
-    meta_hint = f"Kata Kunci Meta Terdeteksi dari Halaman/Kompetitor: {', '.join(meta_keywords[:6])}\n" if meta_keywords else ""
+    meta_hint = f"Kata Kunci Meta Terdeteksi dari Halaman: {', '.join(meta_keywords[:6])}\n" if meta_keywords else ""
 
     keyword_instruction = f"Kata Kunci Fokus yang dimasukkan penulis: \"{keyword_text}\"" if keyword_text else (
         "Kata Kunci Fokus: (KOSONG)\n"
         f"{meta_hint}"
         "Instruksi Khusus Kata Kunci:\n"
-        "- 'detected_competitor_keyword': Analisis judul, meta keywords, dan isi berita di atas, lalu tentukan kata kunci utama yang kemungkinan besar dibidik/dipakai oleh kompetitor/penulis artikel ini.\n"
-        "- 'focus_keyword': Tentukan 1 rekomendasi kata kunci fokus terbaik (2-4 kata) yang memiliki potensi pencarian tinggi di Google jika redaksi ingin menulis artikel serupa atau mengoptimasi halaman web sendiri.\n"
+        f"- 'detected_competitor_keyword': Analisis judul, meta keywords, dan isi berita di atas, lalu tentukan kata kunci utama yang saat ini tercermin/dibidik oleh {'penulis naskah internal' if is_own_site else 'kompetitor/penulis artikel ini'}.\n"
+        f"- 'focus_keyword': Tentukan 1 rekomendasi kata kunci fokus terbaik (2-4 kata) yang memiliki potensi pencarian tinggi di Google untuk {'mengoptimasi naskah internal ini' if is_own_site else 'menulis artikel tandingan atau mengoptimasi artikel sendiri'}.\n"
         "- 'keyword_variations': Berikan 2-4 variasi kata kunci turunan yang relevan untuk memperkaya artikel."
     )
     category_instruction = f"Kategori/Rubrik Berita: \"{category.strip()}\"\n" if category and category.strip() else ""
+    context_type = "Audit Naskah Web Sendiri (Portal BorneoFlash)" if is_own_site else "Analisis URL Berita / Kompetitor"
 
     prompt = f"""
 Bertindaklah sebagai Senior SEO Engine Evaluator & Editor Berita Indonesia.
+Konteks Audit: {context_type}.
 Konteks Waktu: Hari ini adalah tanggal {current_date}. Jangan anggap tahun berjalan sebagai masa depan.
 Evaluasi artikel berikut berdasarkan standar GEO (Generative Engine Optimization), E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness), dan praktik terbaik SEO Google.
 
