@@ -244,11 +244,20 @@ Struktur sama dengan `/analyze`, ditambah field `url_metadata`:
     "editor_notes": "Sertakan tautan ke sumber resmi (misalnya, situs instansi) jika ada rilis pers terkait untuk meningkatkan Authoritativeness. Perjelas sumber informasi artikel.",
     "url_metadata": {
       "url": "https://kaltimtoday.co/berita-judi-online-kaltim",
+      "domain": "kaltimtoday.co",
       "title": "Judul Artikel dari Website",
       "authors": ["Nama Penulis"],
       "publish_date": "2026-09-20 10:00:00",
-      "top_image": "https://kaltimtoday.co/img/header.jpg"
+      "top_image": "https://kaltimtoday.co/img/header.jpg",
+      "meta_description": "Ringkasan meta deskripsi asli kompetitor...",
+      "canonical_url": "https://kaltimtoday.co/berita-judi-online-kaltim",
+      "word_count": 420,
+      "reading_time_minutes": 2
     },
+    "competitor_opportunities": [
+      "Panjang artikel kompetitor standar (420 kata). Tambahkan sudut pandang eksklusif atau latar belakang peristiwa untuk menyalipnya.",
+      "Kompetitor tidak mencantumkan tautan ke sumber resmi/pemerintah. Cantumkan rujukan resmi untuk skor E-E-A-T yang lebih kuat di Google News."
+    ],
     "combined_suggestions": ["..."]
   },
   "provider": "fastapi"
@@ -257,9 +266,10 @@ Struktur sama dengan `/analyze`, ditambah field `url_metadata`:
 
 ### Catatan Penting
 
-- Konten yang dikirim ke AI dibatasi **3000 karakter** untuk efisiensi prompt
-- Jika URL tidak bisa diakses atau konten kosong, API mengembalikan **HTTP 400**
-- Library `newspaper4k` harus terinstal, jika tidak tersedia akan mengembalikan **HTTP 500**
+- **Anti-Bot & WAF Bypass**: Dilengkapi header browser modern rotasi (Chrome, Firefox, Safari) untuk mencegah blokir `403 Forbidden` dari portal berita besar (Tribunnews, Kompas, Detik).
+- **Dual Engine Extraction**: Menggabungkan `newspaper4k` dan fallback `BeautifulSoup` (mengekstrak selektor kontainer artikel Indonesia jika heuristik newspaper kosong).
+- Konten yang dikirim ke AI dibatasi **3000 karakter** untuk efisiensi prompt.
+- Jika URL tidak bisa diakses atau domain tidak merespons, API mengembalikan **HTTP 400**.
 
 ---
 

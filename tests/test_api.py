@@ -63,3 +63,23 @@ def test_schema_jsonld():
     assert res["status"] == "success"
     assert res["data"]["jsonld"]["@type"] == "NewsArticle"
     assert '<script type="application/ld+json">' in res["data"]["html_snippet"]
+
+
+def test_analyze_url_tribunnews():
+    payload = {
+        "url": "https://kaltim.tribunnews.com/tribun-etam/1168317/rudianto-salip-abdunnur-di-putaran-akhir-74-suara-antarkan-guru-besar-kehutanan-jadi-rektor-unmul",
+        "focus_keyword": "Rektor Unmul",
+        "use_ai_analysis": False
+    }
+
+    response = client.post("/api/v1/seo/analyze-url", json=payload)
+    assert response.status_code == 200
+    res = response.json()
+    assert res["status"] == "success"
+    data = res["data"]
+    assert "url_metadata" in data
+    assert "Rudianto" in data["url_metadata"]["title"]
+    assert data["url_metadata"]["domain"] == "kaltim.tribunnews.com"
+    assert data["url_metadata"]["word_count"] > 100
+    assert "competitor_opportunities" in data
+    assert len(data["competitor_opportunities"]) > 0

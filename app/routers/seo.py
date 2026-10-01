@@ -15,6 +15,10 @@ from app.services.html_service import analyze_html_structure
 from app.services.ninerouter_service import call_9router_for_geo
 from app.services.schema_service import generate_newsarticle_jsonld, render_html_snippet
 from app.services.taxonomy_service import analyze_taxonomy_seo
+from app.services.scraper_service import (
+    extract_article_content,
+    generate_competitor_opportunities
+)
 
 router = APIRouter(prefix="/api/v1/seo", tags=["SEO Engine"])
 
@@ -106,26 +110,16 @@ def analyze_article(payload: ArticleAnalysisRequest):
 
 @router.post("/analyze-url")
 def analyze_url(payload: URLAnalysisRequest):
-    """Scrape & analisis URL artikel kompetitor menggunakan newspaper4k."""
+    """Scrape & analisis URL artikel kompetitor dengan anti-bot header, newspaper4k, dan Beautiful Soup."""
+    # 1. Download & parse artikel dari URL dengan browser headers realistis (bypass 403 WAF)
     try:
-        from newspaper import Article
-    except ImportError:
-        raise HTTPException(status_code=500, detail="Library newspaper4k belum terinstal.")
-
-    # 1. Download & parse artikel dari URL
-    try:
-        article = Article(payload.url)
-        article.download()
-        article.parse()
+        extracted = extract_article_content(payload.url)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Gagal mengambil artikel dari URL: {str(e)}")
 
-    title = article.title or ""
-    text = article.text or ""
-    html = article.html or ""
-    authors = article.authors or []
-    publish_date = str(article.publish_date) if article.publish_date else None
-    top_image = article.top_image or ""
+    title = extracted["title"] or ""
+    text = extracted["text"] or ""
+    html = extracted["html"] or ""
 
     if not text.strip():
         raise HTTPException(status_code=400, detail="Tidak ada konten teks yang berhasil diekstrak dari URL.")
@@ -163,7 +157,13 @@ def analyze_url(payload: URLAnalysisRequest):
     eeat_score = geo_res.get("eeat_score", 0) if geo_res else tech_score
     overall_score = round((tech_score * 0.6) + (eeat_score * 0.4)) if geo_res else tech_score
 
+    # 7. Peluang Menyalip Kompetitor (Competitor Opportunities)
+    opportunities = generate_competitor_opportunities(extracted, technical_res, html_res, active_keyword)
+
     all_suggestions = []
+    # Masukkan peluang kompetitor di posisi terdepan sebagai rekomendasi strategis
+    all_suggestions.extend(opportunities)
+
     if technical_res.get("headline_issues") or technical_res.get("headline_score", 100) < 100:
         all_suggestions.append(f"Saran judul: {suggested_title}")
     all_suggestions.extend(technical_res.get("technical_suggestions", []))
@@ -174,7 +174,7 @@ def analyze_url(payload: URLAnalysisRequest):
             all_suggestions.extend(comp_data.get("suggestions", []))
     all_suggestions = list(dict.fromkeys(all_suggestions))
 
-    # 7. Generate Editor Notes & Suggestions
+    # 8. Generate Editor Notes & Suggestions
     editor_notes = geo_res.get("editor_notes") if geo_res and "editor_notes" in geo_res else " ".join(all_suggestions) if all_suggestions else "Artikel sudah cukup baik, tidak ada catatan khusus."
 
     return {
@@ -190,11 +190,17 @@ def analyze_url(payload: URLAnalysisRequest):
             "editor_notes": editor_notes,
             "url_metadata": {
                 "url": payload.url,
+                "domain": extracted["domain"],
                 "title": title,
-                "authors": authors,
-                "publish_date": publish_date,
-                "top_image": top_image
+                "authors": extracted["authors"],
+                "publish_date": extracted["publish_date"],
+                "top_image": extracted["top_image"],
+                "meta_description": extracted["meta_description"],
+                "canonical_url": extracted["canonical_url"],
+                "word_count": extracted["word_count"],
+                "reading_time_minutes": extracted["reading_time_minutes"]
             },
+            "competitor_opportunities": opportunities,
             "overall_score": overall_score,
             "html_structure_analysis": html_res,
             "combined_suggestions": all_suggestions
