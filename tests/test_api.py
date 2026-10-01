@@ -68,7 +68,7 @@ def test_schema_jsonld():
 def test_analyze_url_tribunnews():
     payload = {
         "url": "https://kaltim.tribunnews.com/tribun-etam/1168317/rudianto-salip-abdunnur-di-putaran-akhir-74-suara-antarkan-guru-besar-kehutanan-jadi-rektor-unmul",
-        "focus_keyword": "Rektor Unmul",
+        "focus_keyword": "",  # Kosong sesuai skenario pengguna
         "use_ai_analysis": False
     }
 
@@ -81,5 +81,16 @@ def test_analyze_url_tribunnews():
     assert "Rudianto" in data["url_metadata"]["title"]
     assert data["url_metadata"]["domain"] == "kaltim.tribunnews.com"
     assert data["url_metadata"]["word_count"] > 100
+
+    # Verifikasi keyword_analysis
+    assert "keyword_analysis" in data
+    ka = data["keyword_analysis"]
+    assert ka["detected_competitor_keyword"] != ""
+    assert "Pemilihan Rektor" in ka["detected_competitor_keyword"] or "Rudianto" in ka["detected_competitor_keyword"]
+    assert ka["recommended_focus_keyword"] != ""
+    assert data["seo_suggestions"]["focus_keyword"] == ka["recommended_focus_keyword"]
+
+    # Verifikasi competitor_opportunities memuat saran kata kunci
     assert "competitor_opportunities" in data
     assert len(data["competitor_opportunities"]) > 0
+    assert any("kata kunci" in opp.lower() for opp in data["competitor_opportunities"])

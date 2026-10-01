@@ -172,6 +172,22 @@ def extract_article_content(url: str, html: Optional[str] = None) -> Dict[str, A
         if date_tag:
             publish_date = date_tag.get("datetime") or date_tag.get("content") or date_tag.get_text(strip=True)
 
+    # Ekstraksi Meta Keywords (Kata kunci yang ditargetkan kompetitor)
+    meta_keywords = []
+    kw_tags = soup.find_all("meta", attrs={"name": re.compile(r'^(keywords|news_keywords)$', re.I)})
+    for tag in kw_tags:
+        content_val = tag.get("content", "")
+        if content_val:
+            for item in content_val.split(","):
+                clean_item = item.strip()
+                if clean_item and clean_item.lower() not in [k.lower() for k in meta_keywords]:
+                    meta_keywords.append(clean_item)
+
+    for tag in soup.find_all("meta", property="article:tag"):
+        content_val = tag.get("content", "")
+        if content_val and content_val.strip().lower() not in [k.lower() for k in meta_keywords]:
+            meta_keywords.append(content_val.strip())
+
     words = text.split()
     word_count = len(words)
     reading_time = max(1, round(word_count / 180))
@@ -180,6 +196,8 @@ def extract_article_content(url: str, html: Optional[str] = None) -> Dict[str, A
     domain = parsed_url.netloc.lower()
     if domain.startswith("www."):
         domain = domain[4:]
+
+    detected_keyword_heuristic = meta_keywords[0] if meta_keywords else ""
 
     return {
         "url": url,
@@ -191,6 +209,8 @@ def extract_article_content(url: str, html: Optional[str] = None) -> Dict[str, A
         "publish_date": publish_date,
         "top_image": top_image,
         "meta_description": meta_desc,
+        "meta_keywords": meta_keywords,
+        "detected_keyword_heuristic": detected_keyword_heuristic,
         "canonical_url": canonical_url,
         "word_count": word_count,
         "reading_time_minutes": reading_time
@@ -201,14 +221,31 @@ def generate_competitor_opportunities(
     competitor_meta: Dict[str, Any],
     technical_res: Dict[str, Any],
     html_res: Dict[str, Any],
-    keyword: str
+    keyword: str,
+    keyword_analysis: Optional[Dict[str, Any]] = None
 ) -> List[str]:
     """Menghasilkan catatan intelijen redaksi (Peluang Menyalip Kompetitor di Google)."""
     opportunities: List[str] = []
     word_count = competitor_meta.get("word_count", 0)
     kw_display = keyword.strip() if keyword else "topik ini"
 
-    # 1. Celah Kedalaman Konten (Content Depth Gap)
+    # 1. Celah & Rekomendasi Kata Kunci Target (Keyword Gap)
+    if keyword_analysis:
+        det_kw = keyword_analysis.get("detected_competitor_keyword")
+        rec_kw = keyword_analysis.get("recommended_focus_keyword")
+        variations = keyword_analysis.get("keyword_variations", [])
+        var_str = f" (variasi: {', '.join(variations[:3])})" if variations else ""
+
+        if det_kw and rec_kw and det_kw.lower() != rec_kw.lower():
+            opportunities.append(
+                f"Kata kunci terdeteksi yang dibidik kompetitor: '{det_kw}'. Untuk menyalip di hasil pencarian atau mengoptimasi artikel sendiri, gunakan rekomendasi kata kunci fokus: '{rec_kw}'{var_str}."
+            )
+        elif rec_kw:
+            opportunities.append(
+                f"Rekomendasi kata kunci fokus terbaik untuk SEO artikel ini: '{rec_kw}'{var_str}."
+            )
+
+    # 2. Celah Kedalaman Konten (Content Depth Gap)
     if word_count < 300:
         opportunities.append(
             f"Artikel kompetitor sangat singkat (hanya {word_count} kata). Tulis liputan mendalam minimal 400-500 kata untuk peluang besar mengungguli peringkatnya di Google."
@@ -218,7 +255,7 @@ def generate_competitor_opportunities(
             f"Panjang artikel kompetitor standar ({word_count} kata). Tambahkan sudut pandang eksklusif atau latar belakang peristiwa untuk menyalipnya."
         )
 
-    # 2. Celah Struktur Heading
+    # 3. Celah Struktur Heading
     headings = html_res.get("headings", {})
     total_headings = headings.get("h2_count", 0) + headings.get("h3_count", 0)
     if total_headings == 0:

@@ -242,6 +242,23 @@ Struktur sama dengan `/analyze`, ditambah field `url_metadata`:
       "meta_description": "150 karakter pertama dari konten..."
     },
     "editor_notes": "Sertakan tautan ke sumber resmi (misalnya, situs instansi) jika ada rilis pers terkait untuk meningkatkan Authoritativeness. Perjelas sumber informasi artikel.",
+    "keyword_analysis": {
+      "user_provided_keyword": "",
+      "detected_competitor_keyword": "Pemilihan Rektor Unmul",
+      "recommended_focus_keyword": "Rudianto Salip Abdunnur",
+      "meta_keywords_from_page": [
+        "Pemilihan Rektor Unmul",
+        "Unmul",
+        "Universitas Mulawarman",
+        "Rudianto Amirta"
+      ],
+      "keyword_variations": [
+        "Unmul",
+        "Universitas Mulawarman",
+        "Rudianto Amirta"
+      ],
+      "notes": "Kata kunci terdeteksi yang dibidik kompetitor: 'Pemilihan Rektor Unmul'. Rekomendasi kata kunci fokus terbaik untuk SEO artikel Anda: 'Rudianto Salip Abdunnur'."
+    },
     "url_metadata": {
       "url": "https://kaltimtoday.co/berita-judi-online-kaltim",
       "domain": "kaltimtoday.co",
@@ -255,6 +272,7 @@ Struktur sama dengan `/analyze`, ditambah field `url_metadata`:
       "reading_time_minutes": 2
     },
     "competitor_opportunities": [
+      "Kata kunci terdeteksi yang dibidik kompetitor: 'Pemilihan Rektor Unmul'. Untuk menyalip di hasil pencarian atau mengoptimasi artikel sendiri, gunakan rekomendasi kata kunci fokus: 'Rudianto Salip Abdunnur' (variasi: Unmul, Universitas Mulawarman, Rudianto Amirta).",
       "Panjang artikel kompetitor standar (420 kata). Tambahkan sudut pandang eksklusif atau latar belakang peristiwa untuk menyalipnya.",
       "Kompetitor tidak mencantumkan tautan ke sumber resmi/pemerintah. Cantumkan rujukan resmi untuk skor E-E-A-T yang lebih kuat di Google News."
     ],
@@ -266,6 +284,7 @@ Struktur sama dengan `/analyze`, ditambah field `url_metadata`:
 
 ### Catatan Penting
 
+- **Deteksi Kata Kunci Otomatis (Jika `focus_keyword` Kosong)**: Jika pengguna tidak mengisi `focus_keyword` (`""`), engine mengekstrak kata kunci target kompetitor dari tag `<meta name="keywords">`, `<meta name="news_keywords">`, dan analisis AI. Engine kemudian memberikan **rekomendasi kata kunci fokus terbaik untuk SEO** beserta variasi long-tail pada field `keyword_analysis` dan `seo_suggestions.focus_keyword`.
 - **Anti-Bot & WAF Bypass**: Dilengkapi header browser modern rotasi (Chrome, Firefox, Safari) untuk mencegah blokir `403 Forbidden` dari portal berita besar (Tribunnews, Kompas, Detik).
 - **Dual Engine Extraction**: Menggabungkan `newspaper4k` dan fallback `BeautifulSoup` (mengekstrak selektor kontainer artikel Indonesia jika heuristik newspaper kosong).
 - Konten yang dikirim ke AI dibatasi **3000 karakter** untuk efisiensi prompt.

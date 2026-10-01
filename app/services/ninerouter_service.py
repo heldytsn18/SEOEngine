@@ -3,7 +3,7 @@ import re
 import json
 import requests
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict, Any, Optional, List
 
 from dotenv import load_dotenv
 
@@ -14,12 +14,25 @@ NINEROUTER_URL = os.getenv("NINEROUTER_URL", "https://api.ninerouter.com/v1/chat
 NINEROUTER_API_KEY = os.getenv("NINEROUTER_API_KEY", "")
 
 
-def call_9router_for_geo(title: str, content: str, keyword: str = "", category: str = "") -> Dict[str, Any]:
+def call_9router_for_geo(
+    title: str,
+    content: str,
+    keyword: str = "",
+    category: str = "",
+    meta_keywords: Optional[list] = None
+) -> Dict[str, Any]:
     """Panggil 9Router AI Proxy untuk evaluasi kualitatif GEO & E-E-A-T serta auto-generate SEO metadata."""
     current_date = datetime.now().strftime("%Y-%m-%d")
     keyword_text = keyword.strip() if keyword else ""
+    meta_hint = f"Kata Kunci Meta Terdeteksi dari Halaman/Kompetitor: {', '.join(meta_keywords[:6])}\n" if meta_keywords else ""
+
     keyword_instruction = f"Kata Kunci Fokus yang dimasukkan penulis: \"{keyword_text}\"" if keyword_text else (
-        "Kata Kunci Fokus: (KOSONG - Anda WAJIB menganalisis judul dan konten, lalu menentukan 1 kata kunci/frasa fokus terbaik (2-4 kata) yang memiliki potensi pencarian tinggi di Google)."
+        "Kata Kunci Fokus: (KOSONG)\n"
+        f"{meta_hint}"
+        "Instruksi Khusus Kata Kunci:\n"
+        "- 'detected_competitor_keyword': Analisis judul, meta keywords, dan isi berita di atas, lalu tentukan kata kunci utama yang kemungkinan besar dibidik/dipakai oleh kompetitor/penulis artikel ini.\n"
+        "- 'focus_keyword': Tentukan 1 rekomendasi kata kunci fokus terbaik (2-4 kata) yang memiliki potensi pencarian tinggi di Google jika redaksi ingin menulis artikel serupa atau mengoptimasi halaman web sendiri.\n"
+        "- 'keyword_variations': Berikan 2-4 variasi kata kunci turunan yang relevan untuk memperkaya artikel."
     )
     category_instruction = f"Kategori/Rubrik Berita: \"{category.strip()}\"\n" if category and category.strip() else ""
 
@@ -44,7 +57,9 @@ ATURAN PENTING PENULISAN SARAN:
 
 Berikan output JSON SAJA tanpa penjelasan tambahan, dengan struktur format persis:
 {{
-  "focus_keyword": "<1 frasa kunci fokus terbaik 2-4 kata, gunakan kata kunci penulis jika ada, atau tentukan yang paling relevan jika kosong>",
+  "detected_competitor_keyword": "<Kata kunci yang terdeteksi dipakai/dibidik oleh kompetitor pada artikel ini, atau kosong jika URL sendiri>",
+  "focus_keyword": "<1 frasa kunci fokus terbaik 2-4 kata untuk SEO jika menulis artikel ini>",
+  "keyword_variations": ["<variasi keyword 1>", "<variasi keyword 2>", "<variasi keyword 3>"],
   "seo_title": "<Judul SEO optimal 50-60 karakter yang menarik klik dan mengandung focus_keyword>",
   "meta_description": "<Meta description ringkas, padat, 130-150 karakter yang memancing klik dan merangkum inti berita>",
   "eeat_score": <angka 1-100>,
@@ -100,7 +115,9 @@ Berikan output JSON SAJA tanpa penjelasan tambahan, dengan struktur format persi
             raise Exception(f"HTTP {res.status_code}: {res.text[:200]}")
     except Exception as e:
         return {
+            "detected_competitor_keyword": meta_keywords[0] if meta_keywords else "",
             "focus_keyword": keyword.strip() if keyword else "",
+            "keyword_variations": meta_keywords[1:4] if meta_keywords and len(meta_keywords) > 1 else [],
             "seo_title": title[:60] if title else "",
             "meta_description": "",
             "eeat_score": 0,

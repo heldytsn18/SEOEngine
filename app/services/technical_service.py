@@ -91,7 +91,11 @@ def extract_focus_keyword_heuristic(title: str, content: str = "") -> str:
     while words and words[-1].lower() in STOPWORDS_ID:
         words.pop()
 
-    candidate = " ".join(words[:4]) if len(words) >= 4 else " ".join(words)
+    cand_words = words[:4] if len(words) >= 4 else list(words)
+    while cand_words and cand_words[-1].lower() in STOPWORDS_ID:
+        cand_words.pop()
+
+    candidate = " ".join(cand_words)
     return candidate.strip() or title[:30].strip()
 
 

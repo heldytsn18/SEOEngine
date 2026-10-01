@@ -125,18 +125,61 @@ def analyze_url(payload: URLAnalysisRequest):
         raise HTTPException(status_code=400, detail="Tidak ada konten teks yang berhasil diekstrak dari URL.")
 
     active_keyword = (payload.focus_keyword or "").strip()
+    meta_keywords = extracted.get("meta_keywords", [])
     geo_res = {}
 
     # 2. Jalankan Analisis GEO via 9Router (Opsional)
     if payload.use_ai_analysis:
         truncated_text = text[:3000]
-        geo_res = call_9router_for_geo(title, truncated_text, active_keyword)
-        if not active_keyword and geo_res.get("focus_keyword"):
-            active_keyword = geo_res["focus_keyword"].strip()
+        geo_res = call_9router_for_geo(title, truncated_text, active_keyword, meta_keywords=meta_keywords)
 
-    # 3. Fallback jika keyword masih kosong
+    # 3. Tentukan Kata Kunci yang Dipakai Kompetitor & Rekomendasi Kata Kunci Fokus
+    detected_competitor_kw = ""
+    recommended_focus_kw = ""
+    keyword_variations = []
+
     if not active_keyword:
-        active_keyword = extract_focus_keyword_heuristic(title, text)
+        # Jika user tidak mengisi keyword, ambil hasil deteksi AI atau fallback heuristik
+        detected_competitor_kw = (
+            geo_res.get("detected_competitor_keyword")
+            or extracted.get("detected_keyword_heuristic")
+            or (meta_keywords[0] if meta_keywords else "")
+            or extract_focus_keyword_heuristic(title, text)
+        ).strip()
+
+        recommended_focus_kw = (
+            geo_res.get("focus_keyword")
+            or extract_focus_keyword_heuristic(title, text)
+        ).strip()
+
+        keyword_variations = geo_res.get("keyword_variations") or (
+            meta_keywords[1:4] if len(meta_keywords) > 1 else []
+        )
+
+        active_keyword = recommended_focus_kw or detected_competitor_kw
+    else:
+        # Jika user memasukkan keyword sendiri
+        detected_competitor_kw = extracted.get("detected_keyword_heuristic") or (meta_keywords[0] if meta_keywords else "")
+        recommended_focus_kw = active_keyword
+        keyword_variations = geo_res.get("keyword_variations") or []
+
+    keyword_analysis = {
+        "user_provided_keyword": payload.focus_keyword or "",
+        "detected_competitor_keyword": detected_competitor_kw,
+        "recommended_focus_keyword": recommended_focus_kw,
+        "meta_keywords_from_page": meta_keywords,
+        "keyword_variations": keyword_variations,
+        "notes": (
+            f"Kata kunci terdeteksi yang dibidik kompetitor: '{detected_competitor_kw}'. "
+            f"Rekomendasi kata kunci fokus terbaik untuk SEO artikel Anda: '{recommended_focus_kw}'."
+            if (detected_competitor_kw and recommended_focus_kw and detected_competitor_kw.lower() != recommended_focus_kw.lower())
+            else (
+                f"Rekomendasi kata kunci fokus SEO untuk artikel ini: '{recommended_focus_kw}'."
+                if recommended_focus_kw
+                else "Kata kunci fokus telah ditentukan oleh pengguna."
+            )
+        )
+    }
 
     # 4. Jalankan Analisis Teknis
     technical_res = analyze_technical_seo(title, text, active_keyword)
@@ -158,7 +201,9 @@ def analyze_url(payload: URLAnalysisRequest):
     overall_score = round((tech_score * 0.6) + (eeat_score * 0.4)) if geo_res else tech_score
 
     # 7. Peluang Menyalip Kompetitor (Competitor Opportunities)
-    opportunities = generate_competitor_opportunities(extracted, technical_res, html_res, active_keyword)
+    opportunities = generate_competitor_opportunities(
+        extracted, technical_res, html_res, active_keyword, keyword_analysis=keyword_analysis
+    )
 
     all_suggestions = []
     # Masukkan peluang kompetitor di posisi terdepan sebagai rekomendasi strategis
@@ -182,8 +227,9 @@ def analyze_url(payload: URLAnalysisRequest):
         "data": {
             "news_analysis": technical_res,
             "eeat_analysis": geo_res if geo_res else DEFAULT_EEAT_ANALYSIS,
+            "keyword_analysis": keyword_analysis,
             "seo_suggestions": {
-                "focus_keyword": active_keyword,
+                "focus_keyword": recommended_focus_kw or active_keyword,
                 "seo_title": suggested_title,
                 "meta_description": suggested_meta
             },
