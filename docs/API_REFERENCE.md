@@ -14,8 +14,9 @@
 3. [POST /api/v1/seo/analyze](#post-apiv1seoanalyze)
 4. [POST /api/v1/seo/analyze-url](#post-apiv1seoanalyze-url)
 5. [POST /api/v1/seo/schema-jsonld](#post-apiv1seoschema-jsonld)
-6. [Error Responses](#error-responses)
-7. [Tipe Data Response](#tipe-data-response)
+6. [POST /api/v1/seo/analyze-taxonomy](#post-apiv1seoanalyze-taxonomy)
+7. [Error Responses](#error-responses)
+8. [Tipe Data Response](#tipe-data-response)
 
 ---
 
@@ -344,6 +345,50 @@ Salin nilai `html_snippet` dan paste ke dalam tag `<head>` halaman artikel untuk
 - Field `headline` otomatis dipotong ke **110 karakter** (rekomendasi Google)
 - `dateModified` dan `image` hanya disertakan jika diisi di request
 - Untuk validasi output, gunakan [Google Rich Results Test](https://search.google.com/test/rich-results)
+
+---
+
+## POST /api/v1/seo/analyze-taxonomy
+
+Analisis SEO halaman arsip taksonomi berita (kategori, tag, topik khusus) via 9Router AI & Heuristik Lokal.
+
+### Request Body
+
+| Field | Tipe | Wajib | Deskripsi | Contoh |
+|---|---|---|---|---|
+| `name` | string | Ya | Nama taksonomi (kategori, tag, topik) | `"Balikpapan Pos"` |
+| `description` | string | Tidak | Deskripsi taksonomi saat ini | `"Kumpulan berita seputar Balikpapan"` |
+| `taxonomy_type` | string | Tidak | Tipe taksonomi: `category`, `post_tag`, `newstopic` (default: `"category"`) | `"category"` |
+| `use_ai_analysis` | boolean | Tidak | Evaluasi AI via 9Router (default: `true`) | `true` |
+
+```json
+{
+  "name": "Balikpapan Pos",
+  "description": "Kumpulan berita seputar Kota Balikpapan dan Kalimantan Timur.",
+  "taxonomy_type": "category",
+  "use_ai_analysis": true
+}
+```
+
+### Response
+
+```json
+{
+  "status": "success",
+  "data": {
+    "seo_title": "Berita Balikpapan Pos Terkini Hari Ini | BorneoFlash",
+    "meta_description": "Kumpulan berita Balikpapan Pos terbaru dan terlengkap. Simak liputan mendalam, fakta terkini, dan analisis peristiwa Balikpapan Pos di BorneoFlash.",
+    "focus_keyword": "berita balikpapan pos",
+    "seo_score": 85,
+    "readability_score": 90,
+    "suggestions": [
+      "Sisipkan kata kunci target 'berita balikpapan pos' di kalimat pembuka deskripsi agar terdeteksi mesin pencari."
+    ],
+    "improved_description": "Halaman arsip kumpulan berita balikpapan pos, kabar terkini, dan liputan peristiwa seputar Balikpapan Pos. Menyajikan fakta terverifikasi dan ulasan terpercaya untuk pembaca di Kalimantan Timur dan sekitarnya."
+  },
+  "provider": "ninerouter"
+}
+```
 
 ---
 

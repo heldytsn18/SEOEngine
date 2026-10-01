@@ -1,6 +1,11 @@
 from fastapi import APIRouter, HTTPException
 
-from app.schemas.seo_schema import ArticleAnalysisRequest, URLAnalysisRequest, SchemaJSONLDRequest
+from app.schemas.seo_schema import (
+    ArticleAnalysisRequest,
+    URLAnalysisRequest,
+    SchemaJSONLDRequest,
+    TaxonomyAnalysisRequest
+)
 from app.services.technical_service import (
     analyze_technical_seo,
     extract_focus_keyword_heuristic,
@@ -9,6 +14,7 @@ from app.services.technical_service import (
 from app.services.html_service import analyze_html_structure
 from app.services.ninerouter_service import call_9router_for_geo
 from app.services.schema_service import generate_newsarticle_jsonld, render_html_snippet
+from app.services.taxonomy_service import analyze_taxonomy_seo
 
 router = APIRouter(prefix="/api/v1/seo", tags=["SEO Engine"])
 
@@ -209,4 +215,18 @@ def create_schema_jsonld(payload: SchemaJSONLDRequest):
             "jsonld": schema,
             "html_snippet": html_snippet
         }
+    }
+
+
+@router.post("/analyze-taxonomy")
+def analyze_taxonomy(payload: TaxonomyAnalysisRequest):
+    """Analisis SEO taksonomi berita (kategori, tag, topik khusus) via AI & Heuristik Lokal."""
+    if not payload.name or not payload.name.strip():
+        raise HTTPException(status_code=400, detail="Nama taksonomi tidak boleh kosong.")
+
+    result, provider = analyze_taxonomy_seo(payload)
+    return {
+        "status": "success",
+        "data": result,
+        "provider": provider
     }

@@ -27,3 +27,10 @@ class SchemaJSONLDRequest(BaseModel):
     date_modified: Optional[str] = Field(None, examples=["2026-09-24T04:00:00+08:00"])
     image_url: Optional[str] = Field(None, examples=["https://borneoflash.com/img/berita.jpg"])
     article_url: str = Field(..., examples=["https://borneoflash.com/polri-judi-online-kaltim"])
+
+
+class TaxonomyAnalysisRequest(BaseModel):
+    name: str = Field(..., examples=["Balikpapan"])
+    description: Optional[str] = Field(None, description="Deskripsi taksonomi saat ini", examples=["Kumpulan berita dan informasi dari Kota Balikpapan"])
+    taxonomy_type: Optional[str] = Field("category", description="Tipe taksonomi: category, post_tag, newstopic", examples=["category"])
+    use_ai_analysis: Optional[bool] = Field(True, description="Sertakan analisis AI via 9Router")

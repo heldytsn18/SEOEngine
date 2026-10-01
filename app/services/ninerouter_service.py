@@ -110,3 +110,68 @@ Berikan output JSON SAJA tanpa penjelasan tambahan, dengan struktur format persi
             "trustworthiness": { "score": 0, "is_balanced": False, "has_verification": False, "suggestions": [f"Gagal menghubungkan ke 9Router AI: {str(e)}"] },
             "editor_notes": "Analisis AI gagal. Terapkan standar penulisan berita konvensional (Cek tanggal, 5W1H, panjang judul)."
         }
+
+
+def call_9router_for_taxonomy(name: str, description: str = "", taxonomy_type: str = "category") -> Dict[str, Any]:
+    """Panggil 9Router AI Proxy untuk evaluasi taksonomi berita (kategori, tag, topik)."""
+    type_label = "Tag/Entitas Berita" if taxonomy_type in ("post_tag", "tag") else (
+        "Topik Khusus/Tren" if taxonomy_type in ("newstopic", "topic") else "Kategori Berita"
+    )
+    desc_text = description.strip() if description else "Belum ada deskripsi"
+
+    prompt = f"""
+Bertindaklah sebagai Senior SEO Engine Specialist untuk portal berita Indonesia.
+Evaluasi halaman arsip taksonomi berita berikut:
+
+Tipe Taksonomi: {type_label}
+Nama: {name}
+Deskripsi Saat Ini: {desc_text}
+
+Tugas:
+1. Buat "seo_title" halaman arsip berita (50-60 karakter) yang menarik pembaca dan ramah mesin pencari (contoh: "Berita {name} Terkini & Update Populer | BorneoFlash").
+2. Buat "meta_description" halaman arsip (120-155 karakter) yang memicu klik pencarian Google dan menjelaskan topik {name}.
+3. Tentukan "focus_keyword" paling relevan untuk pencarian Google terkait topik ini (contoh: "berita {name.lower()}").
+4. Buat "improved_description" berupa narasi pengantar arsip yang kaya informasi, natural, dan kontekstual (minimal 100-200 karakter) untuk membantu pembaca memahami topik ini.
+5. Berikan "seo_score" (1-100) dan "readability_score" (1-100) berdasarkan kualitas nama dan deskripsi.
+6. Berikan 3 poin "suggestions" konkret untuk optimasi halaman arsip taksonomi ini.
+
+Berikan output JSON SAJA tanpa penjelasan tambahan, dengan format persis:
+{{
+  "seo_title": "<Judul SEO 50-60 karakter>",
+  "meta_description": "<Meta description 120-155 karakter>",
+  "focus_keyword": "<Frasa kunci target>",
+  "seo_score": <angka 1-100>,
+  "readability_score": <angka 1-100>,
+  "suggestions": [
+    "<Saran konkret 1>",
+    "<Saran konkret 2>",
+    "<Saran konkret 3>"
+  ],
+  "improved_description": "<Deskripsi arsip yang informatif dan kaya kata kunci>"
+}}
+"""
+    try:
+        headers = {
+            "Authorization": f"Bearer {NINEROUTER_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": "ag/gemini-pro-agent",
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.2,
+            "stream": False
+        }
+        res = requests.post(NINEROUTER_URL, headers=headers, json=payload, timeout=30)
+        if res.status_code == 200:
+            try:
+                resp_json = res.json()
+                ai_data = resp_json["choices"][0]["message"]["content"]
+            except Exception:
+                raise Exception(f"Response bukan format OpenAI JSON. Teks: {res.text[:200]}")
+
+            clean_json = re.sub(r'```json\s*|\s*```', '', ai_data).strip()
+            return json.loads(clean_json)
+        else:
+            raise Exception(f"HTTP {res.status_code}: {res.text[:200]}")
+    except Exception:
+        return {}
