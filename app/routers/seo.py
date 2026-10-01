@@ -5,9 +5,11 @@ from app.schemas.seo_schema import (
     URLAnalysisRequest,
     SchemaJSONLDRequest,
     TaxonomyAnalysisRequest,
-    URLRewriteRequest
+    URLRewriteRequest,
+    ContentImprovementRequest
 )
 from app.services.rewrite_service import rewrite_article_from_url
+from app.services.improvement_service import improve_article_content
 from app.services.technical_service import (
     analyze_technical_seo,
     extract_focus_keyword_heuristic,
@@ -326,3 +328,23 @@ def rewrite_url(payload: URLRewriteRequest):
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Gagal menulis ulang artikel dari URL: {str(e)}")
+
+
+@router.post("/improve-content")
+def improve_content(payload: ContentImprovementRequest):
+    """Perbaiki draf artikel otomatis (Auto-fix) berdasarkan evaluasi teknis SEO & keterbacaan."""
+    try:
+        result = improve_article_content(
+            title=payload.title,
+            content=payload.content,
+            focus_keyword=payload.focus_keyword,
+            mode=payload.mode or "all",
+            expand_content=payload.expand_content or False
+        )
+        return {
+            "status": "success",
+            "data": result,
+            "provider": "fastapi"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Gagal memperbaiki konten artikel: {str(e)}")

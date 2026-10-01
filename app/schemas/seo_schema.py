@@ -42,3 +42,11 @@ class URLRewriteRequest(BaseModel):
     focus_keyword: Optional[str] = Field(None, description="Kata kunci fokus (opsional, akan dideteksi otomatis jika kosong)", examples=["Rektor Unmul 2026"])
     tone: Optional[str] = Field("straight_news", description="Gaya penulisan: straight_news, investigative, feature, press_release", examples=["straight_news"])
     local_perspective: Optional[str] = Field("Kalimantan Timur", description="Fokus perspektif lokal redaksi", examples=["Kalimantan Timur"])
+
+
+class ContentImprovementRequest(BaseModel):
+    title: str = Field(..., examples=["Tatap PEDA KTNA 2028, Wabup Paser Terima Audiensi Pengurus Provinsi dan Kabupaten"])
+    content: str = Field(..., examples=["Pemerintah Kabupaten Paser secara resmi menyatakan kesiapannya untuk melakoni peran sebagai tuan rumah..."])
+    focus_keyword: Optional[str] = Field(None, description="Kata kunci fokus target (opsional, jika kosong diekstrak otomatis)", examples=["PEDA KTNA 2028"])
+    mode: Optional[str] = Field("all", description="Mode perbaikan: all, readability, lede, subheadings, headlines", examples=["all"])
+    expand_content: Optional[bool] = Field(False, description="Kembangkan naskah jika kata < 350 kata", examples=[False])

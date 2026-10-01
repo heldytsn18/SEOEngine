@@ -16,8 +16,9 @@
 5. [POST /api/v1/seo/schema-jsonld](#post-apiv1seoschema-jsonld)
 6. [POST /api/v1/seo/analyze-taxonomy](#post-apiv1seoanalyze-taxonomy)
 7. [POST /api/v1/seo/rewrite-url](#post-apiv1seorewrite-url)
-8. [Error Responses](#error-responses)
-9. [Tipe Data Response](#tipe-data-response)
+8. [POST /api/v1/seo/improve-content](#post-apiv1seoimprove-content)
+9. [Error Responses](#error-responses)
+10. [Tipe Data Response](#tipe-data-response)
 
 ---
 
@@ -480,6 +481,77 @@ Scrape artikel dari URL kompetitor/sumber rilis, lalu tulis ulang menjadi naskah
       "source_title": "Rudianto Salip Abdunnur...",
       "original_word_count": 513,
       "attribution_quote": "Disadur dari pemberitaan kaltim.tribunnews.com dengan sudut pandang redaksional BorneoFlash."
+    }
+  },
+  "provider": "fastapi"
+}
+```
+
+## POST /api/v1/seo/improve-content
+
+Perbaiki naskah draf artikel secara otomatis (Auto-Fix) berdasarkan hasil audit teknis SEO dan keterbacaan bahasa Indonesia. Menyajikan perbandingan skor *before* vs *after*.
+
+### Request Body
+
+```json
+{
+  "title": "Tatap PEDA KTNA 2028, Wabup Paser Terima Audiensi Pengurus Provinsi dan Kabupaten",
+  "content": "Pemerintah Kabupaten Paser secara resmi menyatakan kesiapannya untuk melakoni peran sebagai tuan rumah helatan akbar Pekan Daerah Kontak Tani Nelayan Andalan XII Kalimantan Timur yang dijadwalkan bergulir pada tahun 2028 mendatang demi kemajuan bersama warga di daerah.",
+  "focus_keyword": "PEDA KTNA 2028",
+  "mode": "all",
+  "expand_content": true
+}
+```
+
+| Field | Tipe | Wajib | Default | Keterangan |
+|---|---|---|---|---|
+| `title` | string | **Ya** | — | Judul draf artikel saat ini |
+| `content` | string | **Ya** | — | Isi naskah draf (teks murni atau HTML) |
+| `focus_keyword` | string | Tidak | `null` | Kata kunci fokus target (jika kosong, auto-detect dari teks) |
+| `mode` | string | Tidak | `"all"` | Mode perbaikan: `all`, `readability`, `lede`, `subheadings`, `headlines` |
+| `expand_content` | boolean | Tidak | `false` | Kembangkan narasi jika naskah draf sangat pendek (< 350 kata) |
+
+### Response Body
+
+```json
+{
+  "status": "success",
+  "data": {
+    "improved_article": {
+      "title": "Wabup Paser Terima Audiensi Persiapan PEDA KTNA 2028",
+      "title_alternatives": [
+        "Paser Siap Jadi Tuan Rumah PEDA KTNA 2028",
+        "Wabup Paser Kebut Peta Jalan PEDA KTNA 2028"
+      ],
+      "lede": "Pemerintah Kabupaten Paser resmi menyatakan kesiapan menjadi tuan rumah PEDA KTNA 2028...",
+      "content": "<p>Pemerintah Kabupaten Paser resmi...</p><h2>Fokus Persiapan dan Target Ekonomi</h2><p>Pemerintah daerah mulai memetakan...</p>",
+      "content_plain": "Teks naskah artikel bersih...",
+      "meta_description": "Pemkab Paser kebut persiapan PEDA KTNA 2028. Wabup Ikhwan Antasari targetkan efek ganda ekonomi bagi petani dan nelayan lokal.",
+      "focus_keyword": "PEDA KTNA 2028",
+      "word_count": 357,
+      "reading_time_minutes": 2
+    },
+    "improvements_applied": [
+      "Potong judul 52 karakter. Tambah kata kunci.",
+      "Rombak paragraf awal. Pakai 5W1H. Sisip kata kunci.",
+      "Pecah kalimat panjang. Maksimal 25 kata.",
+      "Tambah subjudul H2. Sisip kata kunci.",
+      "Panjangkan naskah 364 kata. Tambah konteks."
+    ],
+    "score_comparison": {
+      "before": {
+        "seo_score": 55,
+        "readability_score": 45,
+        "long_sentences_count": 1,
+        "word_count": 37
+      },
+      "after": {
+        "seo_score": 100,
+        "readability_score": 90,
+        "long_sentences_count": 0,
+        "word_count": 357
+      },
+      "score_gain": "+45 Poin"
     }
   },
   "provider": "fastapi"
