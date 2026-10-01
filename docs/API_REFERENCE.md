@@ -15,8 +15,9 @@
 4. [POST /api/v1/seo/analyze-url](#post-apiv1seoanalyze-url)
 5. [POST /api/v1/seo/schema-jsonld](#post-apiv1seoschema-jsonld)
 6. [POST /api/v1/seo/analyze-taxonomy](#post-apiv1seoanalyze-taxonomy)
-7. [Error Responses](#error-responses)
-8. [Tipe Data Response](#tipe-data-response)
+7. [POST /api/v1/seo/rewrite-url](#post-apiv1seorewrite-url)
+8. [Error Responses](#error-responses)
+9. [Tipe Data Response](#tipe-data-response)
 
 ---
 
@@ -416,6 +417,72 @@ Analisis SEO halaman arsip taksonomi berita (kategori, tag, topik khusus) via 9R
     "improved_description": "Halaman arsip kumpulan berita balikpapan pos, kabar terkini, dan liputan peristiwa seputar Balikpapan Pos. Menyajikan fakta terverifikasi dan ulasan terpercaya untuk pembaca di Kalimantan Timur dan sekitarnya."
   },
   "provider": "ninerouter"
+}
+```
+
+## POST /api/v1/seo/rewrite-url
+
+Scrape artikel dari URL kompetitor/sumber rilis, lalu tulis ulang menjadi naskah berita baru yang orisinal, berformat piramida terbalik dengan subjudul H2, metadata SEO lengkap, dan skor kemiripan anti-plagiarisme.
+
+### Request Body
+
+```json
+{
+  "url": "https://kaltim.tribunnews.com/tribun-etam/1168317/rudianto-salip-abdunnur-di-putaran-akhir-74-suara-antarkan-guru-besar-kehutanan-jadi-rektor-unmul",
+  "focus_keyword": "Rektor Unmul 2026",
+  "tone": "straight_news",
+  "local_perspective": "Kalimantan Timur"
+}
+```
+
+| Field | Tipe | Wajib | Default | Keterangan |
+|---|---|---|---|---|
+| `url` | string | **Ya** | — | URL artikel yang akan disadur/ditulis ulang |
+| `focus_keyword` | string | Tidak | `null` | Kata kunci fokus target (jika kosong, auto-detect dari naskah sumber) |
+| `tone` | string | Tidak | `"straight_news"` | Gaya penulisan: `straight_news`, `investigative`, `feature`, `press_release` |
+| `local_perspective` | string | Tidak | `"Kalimantan Timur"` | Fokus perspektif daerah |
+
+### Response Body
+
+```json
+{
+  "status": "success",
+  "data": {
+    "article": {
+      "title": "Pemilihan Rektor Unmul: Rudianto Kalahkan Petahana",
+      "title_alternatives": [
+        "Raih 74 Suara, Rudianto Amirta Menangi Pilrek Unmul",
+        "Kalahkan Abdunnur, Guru Besar Kehutanan Pimpin Unmul"
+      ],
+      "lede": "Prof. Dr. Rudianto Amirta resmi memenangi Pemilihan Rektor Unmul periode 2026-2030...",
+      "content": "<p>Prof. Dr. Rudianto Amirta resmi...</p><h2>Rincian Suara Pemilihan Rektor Unmul</h2><p>Total 138 suara sah...</p>",
+      "content_plain": "Teks naskah berita bersih...",
+      "word_count": 411,
+      "reading_time_minutes": 2
+    },
+    "seo_metadata": {
+      "focus_keyword": "Pemilihan Rektor Unmul",
+      "keyword_variations": ["Unmul", "Rudianto Amirta", "Abdunnur"],
+      "meta_description": "Prof. Rudianto Amirta menangi Pemilihan Rektor Unmul 2026-2030 dengan 74 suara. Kalahkan petahana Abdunnur.",
+      "suggested_category": "Pendidikan",
+      "suggested_tags": ["Unmul", "Rudianto Amirta", "Abdunnur", "Kalimantan Timur", "Samarinda"]
+    },
+    "quality_metrics": {
+      "seo_score": 100,
+      "readability_score": 85,
+      "similarity_percentage": 7.7,
+      "originality_status": "Sangat Aman (Bebas Plagiarisme / Orisinalitas Sangat Tinggi)",
+      "technical_issues": []
+    },
+    "source_metadata": {
+      "source_url": "https://kaltim.tribunnews.com/...",
+      "source_domain": "kaltim.tribunnews.com",
+      "source_title": "Rudianto Salip Abdunnur...",
+      "original_word_count": 513,
+      "attribution_quote": "Disadur dari pemberitaan kaltim.tribunnews.com dengan sudut pandang redaksional BorneoFlash."
+    }
+  },
+  "provider": "fastapi"
 }
 ```
 

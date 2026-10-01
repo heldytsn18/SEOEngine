@@ -4,8 +4,10 @@ from app.schemas.seo_schema import (
     ArticleAnalysisRequest,
     URLAnalysisRequest,
     SchemaJSONLDRequest,
-    TaxonomyAnalysisRequest
+    TaxonomyAnalysisRequest,
+    URLRewriteRequest
 )
+from app.services.rewrite_service import rewrite_article_from_url
 from app.services.technical_service import (
     analyze_technical_seo,
     extract_focus_keyword_heuristic,
@@ -305,3 +307,22 @@ def analyze_taxonomy(payload: TaxonomyAnalysisRequest):
         "data": result,
         "provider": provider
     }
+
+
+@router.post("/rewrite-url")
+def rewrite_url(payload: URLRewriteRequest):
+    """Scrape artikel dari URL dan tulis ulang menjadi naskah berita baru yang orisinal, ber-H2, dan ber-SEO tinggi."""
+    try:
+        result = rewrite_article_from_url(
+            url=payload.url,
+            focus_keyword=payload.focus_keyword,
+            tone=payload.tone or "straight_news",
+            local_perspective=payload.local_perspective or "Kalimantan Timur"
+        )
+        return {
+            "status": "success",
+            "data": result,
+            "provider": "fastapi"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Gagal menulis ulang artikel dari URL: {str(e)}")
