@@ -160,14 +160,29 @@ def extract_article_content(url: str, html: Optional[str] = None) -> Dict[str, A
                 ".pagination-wrap, .widget-area, .content-ad-sticky"
             ):
                 unwanted.decompose()
-            paras = [p.get_text(strip=True) for p in c.find_all("p") if len(p.get_text(strip=True).split()) >= 4]
+            paras = []
+            for p in c.find_all("p"):
+                raw_p = p.get_text(separator=" ", strip=True)
+                clean_p = re.sub(r'\s+', ' ', raw_p).strip()
+                clean_p = re.sub(r'\s+([,.:;!?)])', r'\1', clean_p)
+                clean_p = re.sub(r'([(])\s+', r'\1', clean_p)
+                if len(clean_p.split()) >= 4:
+                    paras.append(clean_p)
             if paras:
                 extracted_paras = paras
                 break
 
     if not extracted_paras:
         # Fallback: kumpulkan semua paragraf valid di dokumen luar
-        extracted_paras = [p.get_text(strip=True) for p in soup.find_all("p") if len(p.get_text(strip=True).split()) >= 5]
+        paras = []
+        for p in soup.find_all("p"):
+            raw_p = p.get_text(separator=" ", strip=True)
+            clean_p = re.sub(r'\s+', ' ', raw_p).strip()
+            clean_p = re.sub(r'\s+([,.:;!?)])', r'\1', clean_p)
+            clean_p = re.sub(r'([(])\s+', r'\1', clean_p)
+            if len(clean_p.split()) >= 5:
+                paras.append(clean_p)
+        extracted_paras = paras
 
     if extracted_paras:
         bs4_text = "\n\n".join(extracted_paras)
