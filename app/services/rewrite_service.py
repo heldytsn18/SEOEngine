@@ -5,7 +5,12 @@ from datetime import datetime
 from typing import Dict, Any, List, Optional
 from urllib.parse import urlparse
 
-from app.services.ninerouter_service import NINEROUTER_API_KEY, NINEROUTER_URL
+from app.services.ninerouter_service import (
+    NINEROUTER_API_KEY,
+    NINEROUTER_URL,
+    NINEROUTER_MODEL,
+    NINEROUTER_TIMEOUT
+)
 from app.services.scraper_service import extract_article_content
 from app.services.technical_service import (
     analyze_technical_seo,
@@ -125,12 +130,12 @@ Berikan output JSON SAJA tanpa markdown block atau teks pembuka, dengan format p
             "Content-Type": "application/json"
         }
         payload = {
-            "model": "ag/gemini-pro-agent",
+            "model": NINEROUTER_MODEL,
             "messages": [{"role": "user", "content": prompt}],
             "temperature": 0.3,
             "stream": False
         }
-        res = requests.post(NINEROUTER_URL, headers=headers, json=payload, timeout=90)
+        res = requests.post(NINEROUTER_URL, headers=headers, json=payload, timeout=NINEROUTER_TIMEOUT)
         if res.status_code == 200:
             resp_json = res.json()
             raw_ai = resp_json["choices"][0]["message"]["content"]

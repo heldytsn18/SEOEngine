@@ -12,6 +12,8 @@ load_dotenv()
 # Konfigurasi 9Router AI Proxy Gateway (baca dari .env)
 NINEROUTER_URL = os.getenv("NINEROUTER_URL", "https://api.ninerouter.com/v1/chat/completions")
 NINEROUTER_API_KEY = os.getenv("NINEROUTER_API_KEY", "")
+NINEROUTER_MODEL = os.getenv("NINEROUTER_MODEL", "ag/gemini-3.8-flash-high")
+NINEROUTER_TIMEOUT = int(os.getenv("NINEROUTER_TIMEOUT", "60"))
 
 
 def call_9router_for_geo(
@@ -98,12 +100,12 @@ Berikan output JSON SAJA tanpa penjelasan tambahan, dengan struktur format persi
             "Content-Type": "application/json"
         }
         payload = {
-            "model": "ag/gemini-pro-agent",  # 9Router akan mengarahkan ke LLM aktif
+            "model": NINEROUTER_MODEL,
             "messages": [{"role": "user", "content": prompt}],
             "temperature": 0.2,
             "stream": False
         }
-        res = requests.post(NINEROUTER_URL, headers=headers, json=payload, timeout=30)
+        res = requests.post(NINEROUTER_URL, headers=headers, json=payload, timeout=NINEROUTER_TIMEOUT)
         if res.status_code == 200:
             try:
                 resp_json = res.json()
@@ -176,12 +178,12 @@ Berikan output JSON SAJA tanpa penjelasan tambahan, dengan format persis:
             "Content-Type": "application/json"
         }
         payload = {
-            "model": "ag/gemini-pro-agent",
+            "model": NINEROUTER_MODEL,
             "messages": [{"role": "user", "content": prompt}],
             "temperature": 0.2,
             "stream": False
         }
-        res = requests.post(NINEROUTER_URL, headers=headers, json=payload, timeout=30)
+        res = requests.post(NINEROUTER_URL, headers=headers, json=payload, timeout=NINEROUTER_TIMEOUT)
         if res.status_code == 200:
             try:
                 resp_json = res.json()

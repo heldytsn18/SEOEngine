@@ -4,7 +4,12 @@ import requests
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 
-from app.services.ninerouter_service import NINEROUTER_API_KEY, NINEROUTER_URL
+from app.services.ninerouter_service import (
+    NINEROUTER_API_KEY,
+    NINEROUTER_URL,
+    NINEROUTER_MODEL,
+    NINEROUTER_TIMEOUT
+)
 from app.services.technical_service import (
     analyze_technical_seo,
     extract_focus_keyword_heuristic,
@@ -137,12 +142,12 @@ ATURAN PENTING:
             "Content-Type": "application/json"
         }
         payload = {
-            "model": "ag/gemini-pro-agent",
+            "model": NINEROUTER_MODEL,
             "messages": [{"role": "user", "content": prompt}],
             "temperature": 0.2,
             "stream": False
         }
-        res = requests.post(NINEROUTER_URL, headers=headers, json=payload, timeout=90)
+        res = requests.post(NINEROUTER_URL, headers=headers, json=payload, timeout=NINEROUTER_TIMEOUT)
         if res.status_code == 200:
             resp_json = res.json()
             raw_ai = resp_json["choices"][0]["message"]["content"]
