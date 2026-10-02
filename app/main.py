@@ -4,7 +4,7 @@ from app.routers import seo
 app = FastAPI(
     title="BorneoFlash SEO Engine Microservice",
     description="Engine analisis SEO Teknis & GEO berbasis PySastrawi dan 9Router AI",
-    version="2.1.0"
+    version="2.2.0"
 )
 
 # Include routers
@@ -13,7 +13,7 @@ app.include_router(seo.router)
 
 @app.get("/")
 def read_root():
-    return {"status": "online", "service": "BorneoFlash SEO Engine Microservice", "version": "2.1.0"}
+    return {"status": "online", "service": "BorneoFlash SEO Engine Microservice", "version": "2.2.0"}
 
 
 @app.get("/health")

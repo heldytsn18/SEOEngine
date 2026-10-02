@@ -3,7 +3,7 @@
 > **Base URL:** `http://localhost:8000`
 > **Swagger UI:** `http://localhost:8000/docs`
 > **ReDoc:** `http://localhost:8000/redoc`
-> **Version:** 2.1.0
+> **Version:** 2.2.0
 
 ---
 
@@ -31,7 +31,7 @@ Status server.
 {
   "status": "online",
   "service": "BorneoFlash SEO Engine Microservice",
-  "version": "2.1.0"
+  "version": "2.2.0"
 }
 ```
 
