@@ -1,5 +1,9 @@
 import os
 import logging
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from fastapi import FastAPI, Security, HTTPException, status
 from fastapi.security import APIKeyHeader
 from app.routers import seo
