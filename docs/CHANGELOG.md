@@ -6,6 +6,31 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/id-ID/1.0.0/).
 
 ---
 
+## [2.2.0] — 2026-10-03
+
+### Ditambahkan
+- **Endpoint `/api/v1/seo/improve-content`** — Auto-fix/perbaiki draf artikel berdasarkan evaluasi teknis SEO & keterbacaan, dengan perbandingan skor sebelum/sesudah
+- **Improvement Service** (`improvement_service.py`) — Logika perbaikan konten via 9Router AI dengan fallback heuristik lokal
+- **Structured Logging** — Seluruh service kini menggunakan `logging` module untuk tracing error & debugging
+- **API Key Authentication** — Middleware autentikasi `X-API-Key` header untuk seluruh endpoint POST
+
+### Diperbaiki
+- Duplikasi `load_dotenv()` dihapus dari `ninerouter_service.py` (cukup dipanggil di entry point)
+
+---
+
+## [2.1.0] — 2026-09-30
+
+### Ditambahkan
+- **Endpoint `/api/v1/seo/analyze-taxonomy`** — Analisis SEO taksonomi berita (kategori, tag, topik khusus) via AI & heuristik lokal
+- **Endpoint `/api/v1/seo/rewrite-url`** — Scrape artikel dari URL lalu tulis ulang menjadi naskah berita baru yang orisinal
+- **Taxonomy Service** (`taxonomy_service.py`) — Analisis & generasi metadata SEO untuk halaman arsip taksonomi
+- **Rewrite Service** (`rewrite_service.py`) — Penulisan ulang artikel via 9Router AI dengan anti-plagiarism Jaccard 3-gram check
+- **Scraper Service** (`scraper_service.py`) — Scraping URL artikel dengan 4 User-Agent rotation, paginasi view-all detection, multi-selector extraction
+- **Pydantic Models** — `TaxonomyAnalysisRequest`, `URLRewriteRequest`, `ContentImprovementRequest`
+
+---
+
 ## [2.0.1] — 2026-09-29
 
 ### Dokumentasi

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+import logging
 
 from app.schemas.seo_schema import (
     ArticleAnalysisRequest,
@@ -25,6 +26,8 @@ from app.services.scraper_service import (
 )
 
 router = APIRouter(prefix="/api/v1/seo", tags=["SEO Engine"])
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_EEAT_ANALYSIS = {
     "eeat_score": 0,

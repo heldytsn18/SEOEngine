@@ -4,6 +4,7 @@ import requests
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 from urllib.parse import urlparse
+import logging
 
 from app.services.ninerouter_service import (
     NINEROUTER_API_KEY,
@@ -17,6 +18,8 @@ from app.services.technical_service import (
     extract_focus_keyword_heuristic,
     clean_text
 )
+
+logger = logging.getLogger(__name__)
 
 
 def calculate_text_similarity(original_text: str, rewritten_text: str) -> float:
@@ -149,9 +152,8 @@ Berikan output JSON SAJA tanpa markdown block atau teks pembuka, dengan format p
                 if match:
                     ai_data = json.loads(match.group(1))
     except Exception as e:
+        logger.exception("9Router rewrite call failed, using heuristic fallback")
         ai_data = None
-
-    # Fallback jika 9Router AI tidak merespons
     if not ai_data:
         ai_data = {
             "title": f"Liputan Terkini: {source_title[:50]}",

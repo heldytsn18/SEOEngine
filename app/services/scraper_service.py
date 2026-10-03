@@ -5,6 +5,9 @@ from typing import Dict, Any, List, Optional
 from urllib.parse import urlparse, urljoin
 from bs4 import BeautifulSoup
 from newspaper import Article
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Daftar User-Agent browser modern untuk melewati blokir WAF / anti-bot
 BROWSER_USER_AGENTS = [
@@ -61,6 +64,7 @@ def fetch_html_with_browser_headers(url: str, timeout: int = 20) -> str:
                 last_error = f"HTTP {resp.status_code}: {resp.reason}"
         except Exception as e:
             last_error = str(e)
+            logger.warning("UA rotation attempt failed for %s: %s", url, e)
 
     raise Exception(f"Gagal mengambil halaman dari URL: {last_error}")
 
@@ -93,7 +97,7 @@ def extract_article_content(url: str, html: Optional[str] = None) -> Dict[str, A
             if full_html and len(full_html) > len(html) * 0.8:
                 html = full_html
         except Exception:
-            pass
+            logger.warning("View-all pagination fetch failed for %s", view_all_url)
 
     # 2. Parsing menggunakan newspaper4k dengan custom input_html
     article = Article(url)
@@ -101,7 +105,7 @@ def extract_article_content(url: str, html: Optional[str] = None) -> Dict[str, A
         article.download(input_html=html)
         article.parse()
     except Exception:
-        pass
+        logger.warning("newspaper4k parsing failed for %s", url)
 
     title = (article.title or "").strip()
     text = (article.text or "").strip()

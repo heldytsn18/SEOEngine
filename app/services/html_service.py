@@ -2,10 +2,13 @@ import re
 import copy
 from typing import Optional, Dict, Any
 from urllib.parse import urlparse
+import logging
 
 from bs4 import BeautifulSoup
 
 from app.services.technical_service import clean_text, STOPWORDS_ID
+
+logger = logging.getLogger(__name__)
 
 TEMPLATE_HEADING_PATTERN = re.compile(
     r'^(komentar(\s*\(\d+\))?|kirim\s*komentar|tulis\s*komentar|baca\s*juga|'

@@ -3,6 +3,7 @@ import json
 import requests
 from datetime import datetime
 from typing import Dict, Any, List, Optional
+import logging
 
 from app.services.ninerouter_service import (
     NINEROUTER_API_KEY,
@@ -16,6 +17,8 @@ from app.services.technical_service import (
     generate_heuristic_meta,
     clean_text
 )
+
+logger = logging.getLogger(__name__)
 
 
 def improve_article_content(
@@ -159,9 +162,8 @@ ATURAN PENTING:
                 if match:
                     ai_data = json.loads(match.group(1))
     except Exception:
+        logger.exception("9Router improvement call failed, using heuristic fallback")
         ai_data = None
-
-    # Fallback heuristik jika AI tidak merespons
     if not ai_data:
         heuristic_meta = generate_heuristic_meta(title, plain_content, target_keyword)
         # Pecah kalimat panjang secara heuristik dengan membelah pada kata sambung

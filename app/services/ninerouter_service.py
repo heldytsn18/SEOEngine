@@ -4,10 +4,9 @@ import json
 import requests
 from datetime import datetime
 from typing import Dict, Any, Optional, List
+import logging
 
-from dotenv import load_dotenv
-
-load_dotenv()
+logger = logging.getLogger(__name__)
 
 # Konfigurasi 9Router AI Proxy Gateway (baca dari .env)
 NINEROUTER_URL = os.getenv("NINEROUTER_URL", "https://api.ninerouter.com/v1/chat/completions")
@@ -119,6 +118,7 @@ Berikan output JSON SAJA tanpa penjelasan tambahan, dengan struktur format persi
         else:
             raise Exception(f"HTTP {res.status_code}: {res.text[:200]}")
     except Exception as e:
+        logger.exception("9Router GEO call failed, returning fallback response")
         return {
             "detected_competitor_keyword": meta_keywords[0] if meta_keywords else "",
             "focus_keyword": keyword.strip() if keyword else "",
@@ -196,4 +196,5 @@ Berikan output JSON SAJA tanpa penjelasan tambahan, dengan format persis:
         else:
             raise Exception(f"HTTP {res.status_code}: {res.text[:200]}")
     except Exception:
+        logger.exception("9Router taxonomy call failed, returning empty fallback")
         return {}

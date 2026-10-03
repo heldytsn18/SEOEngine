@@ -1,7 +1,10 @@
 import json
 from typing import Dict, Any
+import logging
 
 from app.schemas.seo_schema import SchemaJSONLDRequest
+
+logger = logging.getLogger(__name__)
 
 
 def generate_newsarticle_jsonld(data: SchemaJSONLDRequest) -> Dict[str, Any]:

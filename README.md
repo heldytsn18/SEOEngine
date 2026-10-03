@@ -70,15 +70,19 @@ Client Request
 │  app/main.py — mount router, health check   │
 ├─────────────────────────────────────────────┤
 │              Router Layer                    │
-│  app/routers/seo.py — 3 endpoint POST       │
+│  app/routers/seo.py — 8 endpoint (2G+6P)   │
 ├───────────┬───────────┬─────────────────────┤
 │ Technical │   HTML    │   NineRouter        │
 │ Service   │  Service  │   Service           │
 │ PySastrawi│ BS4 parse │   9Router AI call   │
+├───────────┼───────────┼─────────────────────┤
+│ Scraper   │ Taxonomy  │   Rewrite           │
+│ Service   │  Service  │   Service           │
+│newspaper4k│ Heuristik │   AI rewrite        │
 ├───────────┴───────────┴─────────────────────┤
-│              Schema Service                  │
-│  NewsArticle JSON-LD generator              │
-└─────────────────────────────────────────────┘
+│  Schema Service  │  Improvement Service     │
+│  JSON-LD gen     │  Auto-fix drafts         │
+└──────────────────┴──────────────────────────┘
 ```
 
 ---
@@ -92,6 +96,9 @@ Client Request
 | `/api/v1/seo/analyze` | POST | Analisis draf artikel (teknis + HTML + GEO) |
 | `/api/v1/seo/analyze-url` | POST | Scrape & analisis URL kompetitor |
 | `/api/v1/seo/schema-jsonld` | POST | Generate NewsArticle JSON-LD |
+| `/api/v1/seo/analyze-taxonomy` | POST | Analisis SEO taksonomi (kategori/tag/topik) |
+| `/api/v1/seo/rewrite-url` | POST | Scrape URL lalu tulis ulang jadi naskah baru |
+| `/api/v1/seo/improve-content` | POST | Auto-fix/perbaiki draf artikel |
 
 > 📖 Detail lengkap: [docs/API_REFERENCE.md](docs/API_REFERENCE.md)
 
@@ -117,7 +124,11 @@ SEOEngine/
 │   │   ├── technical_service.py     # PySastrawi stemmer, keyword density, scoring
 │   │   ├── html_service.py          # Heading audit, image alt, link audit
 │   │   ├── ninerouter_service.py    # Integrasi 9Router AI Proxy
-│   │   └── schema_service.py        # Generator NewsArticle JSON-LD
+│   │   ├── schema_service.py        # Generator NewsArticle JSON-LD
+│   │   ├── scraper_service.py       # URL scraping + competitor opportunities
+│   │   ├── taxonomy_service.py      # Analisis SEO taksonomi (kategori/tag)
+│   │   ├── rewrite_service.py       # Rewrite artikel via AI
+│   │   └── improvement_service.py   # Auto-fix konten via AI
 │   └── schemas/
 │       ├── __init__.py
 │       └── seo_schema.py            # Pydantic request models
@@ -146,6 +157,7 @@ Konfigurasi menggunakan file `.env`. Salin dari `.env.example`:
 |---|---|---|
 | `NINEROUTER_URL` | Endpoint API 9Router (OpenAI-compatible) | `https://api.ninerouter.com/v1/chat/completions` |
 | `NINEROUTER_API_KEY` | API key untuk autentikasi 9Router | — (wajib diisi) |
+| `SEO_API_KEY` | API key untuk autentikasi endpoint (header `X-API-Key`) | — (opsional, kosong = auth nonaktif) |
 
 ---
 

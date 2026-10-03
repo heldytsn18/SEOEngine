@@ -1,7 +1,10 @@
 import re
 from typing import Dict, Any, List, Set, Tuple
+import logging
 
 from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
+
+logger = logging.getLogger(__name__)
 
 # Inisialisasi Stemmer PySastrawi (singleton)
 factory = StemmerFactory()

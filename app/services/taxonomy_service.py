@@ -1,9 +1,12 @@
 import re
 from typing import Dict, Any, Tuple, List
+import logging
 
 from app.schemas.seo_schema import TaxonomyAnalysisRequest
 from app.services.technical_service import clean_text, split_sentences_id
 from app.services.ninerouter_service import call_9router_for_taxonomy
+
+logger = logging.getLogger(__name__)
 
 
 def generate_heuristic_taxonomy_analysis(
