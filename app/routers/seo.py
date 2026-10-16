@@ -96,6 +96,18 @@ def analyze_article(payload: ArticleAnalysisRequest):
     # 7. Generate Editor Notes
     editor_notes = geo_res.get("editor_notes") if geo_res and "editor_notes" in geo_res else " ".join(all_suggestions) if all_suggestions else "Artikel sudah cukup baik, tidak ada catatan khusus."
 
+    headline_angles = geo_res.get("headline_angles") if geo_res and geo_res.get("headline_angles") else {
+        "hard_news": payload.title,
+        "google_discover": f"{suggested_title} - Simak Faktanya",
+        "search_seo": suggested_title
+    }
+
+    social_snippets = geo_res.get("social_snippets") if geo_res and geo_res.get("social_snippets") else {
+        "instagram": f"📌 {payload.title}\n\nSimak ulasan selengkapnya di BorneoFlash.com!\n\n#BorneoFlash #BeritaKaltim #Balikpapan #IKN",
+        "whatsapp": f"📰 *{payload.title}*\n\nBaca artikel selengkapnya di BorneoFlash:\nhttps://borneoflash.com/",
+        "twitter": f"{payload.title} — Simak berita lengkapnya di BorneoFlash.com #Kaltim"
+    }
+
     return {
         "status": "success",
         "data": {
@@ -106,6 +118,8 @@ def analyze_article(payload: ArticleAnalysisRequest):
                 "seo_title": suggested_title,
                 "meta_description": suggested_meta
             },
+            "headline_angles": headline_angles,
+            "social_snippets": social_snippets,
             "editor_notes": editor_notes,
             "overall_score": overall_score,
             "html_structure_analysis": html_res,

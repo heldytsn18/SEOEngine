@@ -58,6 +58,14 @@ ATURAN PENTING PENULISAN SARAN:
    - Trustworthiness: Berikan saran cara menyeimbangkan perspektif berita (misal jika berita bersumber dari rilis pers sepihak, sarankan konfirmasi ke pihak pengamat independen atau masyarakat).
 3. Untuk "seo_title": Buat 1 judul alternatif terbaik (50-65 karakter) yang memuat kata kunci fokus dan menarik pembaca berita (contoh: "Kemnaker Dorong Generasi Muda Kuasai AI untuk Tingkatkan Produktivitas Kerja").
 4. Untuk "editor_notes": Buat paragraf ulasan redaksional yang mengalir profesional, ramah, dan membimbing penulis langkah demi langkah.
+5. Untuk "headline_angles": Buat 3 opsi variasi judul berita (50-65 karakter):
+   - "hard_news": Judul lempang, formal, langsung mengedepankan fakta utama.
+   - "google_discover": Judul human interest yang memancing rasa ingin tahu pembaca mobile tanpa clickbait murahan.
+   - "search_seo": Judul kaya kata kunci fokus di bagian awal untuk peringkat pencarian Google.
+6. Untuk "social_snippets": Buat materi promosi media sosial siap pakai:
+   - "instagram": Caption Instagram menarik dengan pembuka punchy, 3 poin ringkasan naskah, ajakan baca di borneoflash.com, dan 5 hashtag populer relevan (#BorneoFlash #Balikpapan #Kaltim #IKN dll).
+   - "whatsapp": Pesan broadcast WhatsApp Channel 2-3 kalimat padat merangkum berita + link ajakan baca.
+   - "twitter": Tweet hook tajam di bawah 250 karakter yang memicu respon dan retweet.
 
 Berikan output JSON SAJA tanpa penjelasan tambahan, dengan struktur format persis:
 {{
@@ -65,6 +73,16 @@ Berikan output JSON SAJA tanpa penjelasan tambahan, dengan struktur format persi
   "focus_keyword": "<1 frasa kunci fokus terbaik 2-4 kata untuk SEO jika menulis artikel ini>",
   "keyword_variations": ["<variasi keyword 1>", "<variasi keyword 2>", "<variasi keyword 3>"],
   "seo_title": "<Judul SEO optimal 50-60 karakter yang menarik klik dan mengandung focus_keyword>",
+  "headline_angles": {{
+      "hard_news": "<Judul lempang formal>",
+      "google_discover": "<Judul human interest memancing klik aman>",
+      "search_seo": "<Judul kaya kata kunci fokus di awal>"
+  }},
+  "social_snippets": {{
+      "instagram": "<Caption Instagram lengkap dengan poin dan hashtag>",
+      "whatsapp": "<Broadcast WhatsApp Channel ringkas>",
+      "twitter": "<Tweet hook tajam>"
+  }},
   "meta_description": "<Meta description ringkas, padat, 130-150 karakter yang memancing klik dan merangkum inti berita>",
   "eeat_score": <angka 1-100>,
   "experience": {{
@@ -124,6 +142,16 @@ Berikan output JSON SAJA tanpa penjelasan tambahan, dengan struktur format persi
             "focus_keyword": keyword.strip() if keyword else "",
             "keyword_variations": meta_keywords[1:4] if meta_keywords and len(meta_keywords) > 1 else [],
             "seo_title": title[:60] if title else "",
+            "headline_angles": {
+                "hard_news": title[:65] if title else "",
+                "google_discover": f"{title[:50]} - Simak Faktanya" if title else "",
+                "search_seo": f"{keyword[:30]}: {title[:35]}" if keyword else (title[:65] if title else "")
+            },
+            "social_snippets": {
+                "instagram": f"📌 {title}\n\nSimak ulasan selengkapnya di BorneoFlash.com!\n\n#BorneoFlash #BeritaKaltim #Balikpapan #IKN",
+                "whatsapp": f"📰 *{title}*\n\nBaca artikel selengkapnya di BorneoFlash:\nhttps://borneoflash.com/",
+                "twitter": f"{title} — Simak berita lengkapnya di BorneoFlash.com #Kaltim"
+            },
             "meta_description": "",
             "eeat_score": 0,
             "experience": { "score": 0, "has_firsthand_experience": False, "suggestions": [] },
@@ -132,6 +160,7 @@ Berikan output JSON SAJA tanpa penjelasan tambahan, dengan struktur format persi
             "trustworthiness": { "score": 0, "is_balanced": False, "has_verification": False, "suggestions": [f"Gagal menghubungkan ke 9Router AI: {str(e)}"] },
             "editor_notes": "Analisis AI gagal. Terapkan standar penulisan berita konvensional (Cek tanggal, 5W1H, panjang judul)."
         }
+
 
 
 def call_9router_for_taxonomy(name: str, description: str = "", taxonomy_type: str = "category") -> Dict[str, Any]:
