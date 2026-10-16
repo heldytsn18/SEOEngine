@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 import logging
 import re
-import html
+import html as html_lib
 
 from app.schemas.seo_schema import (
     ArticleAnalysisRequest,
@@ -25,6 +25,10 @@ from app.services.taxonomy_service import analyze_taxonomy_seo
 from app.services.scraper_service import (
     extract_article_content,
     generate_competitor_opportunities
+)
+from app.services.trends_service import (
+    fetch_google_autocomplete,
+    fetch_people_also_ask
 )
 
 router = APIRouter(prefix="/api/v1/seo", tags=["SEO Engine"])
@@ -79,8 +83,8 @@ def analyze_article(payload: ArticleAnalysisRequest):
         suggested_meta = heuristic_meta["meta_description"]
 
     # Pastikan suggested metadata bersih dari entitas HTML (&ndash;, &nbsp;, dll)
-    suggested_title = html.unescape(suggested_title or "").strip()
-    suggested_meta = html.unescape(suggested_meta or "").strip()
+    suggested_title = html_lib.unescape(suggested_title or "").strip()
+    suggested_meta = html_lib.unescape(suggested_meta or "").strip()
 
     # Perbarui headline_suggestion dengan rekomendasi judul konkret
     if technical_res.get("headline_issues") or technical_res.get("headline_score", 100) < 100:
@@ -144,6 +148,11 @@ def analyze_article(payload: ArticleAnalysisRequest):
         "twitter": f"{payload.title} — Simak berita lengkapnya di BorneoFlash.com #Kaltim"
     }
 
+    search_insights = {
+        "autocomplete_queries": fetch_google_autocomplete(audit_keyword)[:6] if audit_keyword else [],
+        "people_also_ask": fetch_people_also_ask(audit_keyword)[:4] if audit_keyword else []
+    }
+
     return {
         "status": "success",
         "data": {
@@ -160,7 +169,8 @@ def analyze_article(payload: ArticleAnalysisRequest):
             "editor_notes": editor_notes,
             "overall_score": overall_score,
             "html_structure_analysis": html_res,
-            "combined_suggestions": all_suggestions
+            "combined_suggestions": all_suggestions,
+            "google_search_insights": search_insights
         },
         "provider": "fastapi"
     }
@@ -208,8 +218,8 @@ def check_article_score(payload: ArticleAnalysisRequest):
         suggested_title = heuristic_meta["seo_title"]
         suggested_meta = heuristic_meta["meta_description"]
 
-    suggested_title = html.unescape(suggested_title or "").strip()
-    suggested_meta = html.unescape(suggested_meta or "").strip()
+    suggested_title = html_lib.unescape(suggested_title or "").strip()
+    suggested_meta = html_lib.unescape(suggested_meta or "").strip()
 
     if technical_res.get("headline_issues") or technical_res.get("headline_score", 100) < 100:
         technical_res["headline_suggestion"] = f"Gunakan judul alternatif: \"{suggested_title}\""
@@ -269,6 +279,11 @@ def check_article_score(payload: ArticleAnalysisRequest):
 
     editor_notes = geo_res.get("editor_notes") if geo_res and "editor_notes" in geo_res else " ".join(all_suggestions) if all_suggestions else "Artikel sudah cukup baik, tidak ada catatan khusus."
 
+    search_insights = {
+        "autocomplete_queries": fetch_google_autocomplete(audit_keyword)[:6] if audit_keyword else [],
+        "people_also_ask": fetch_people_also_ask(audit_keyword)[:4] if audit_keyword else []
+    }
+
     return {
         "status": "success",
         "data": {
@@ -290,7 +305,8 @@ def check_article_score(payload: ArticleAnalysisRequest):
             "social_snippets": social_snippets,
             "editor_notes": editor_notes,
             "html_structure_analysis": html_res,
-            "combined_suggestions": all_suggestions
+            "combined_suggestions": all_suggestions,
+            "google_search_insights": search_insights
         },
         "provider": "fastapi"
     }
@@ -307,7 +323,7 @@ def analyze_url(payload: URLAnalysisRequest):
 
     title = extracted["title"] or ""
     text = extracted["text"] or ""
-    html = extracted["html"] or ""
+    html_content = extracted["html"] or ""
 
     if not text.strip():
         raise HTTPException(status_code=400, detail="Tidak ada konten teks yang berhasil diekstrak dari URL.")
@@ -395,13 +411,13 @@ def analyze_url(payload: URLAnalysisRequest):
     technical_res = analyze_technical_seo(title, text, active_keyword)
 
     # 5. Jalankan Analisis Struktur HTML (Scoped ke Badan Artikel)
-    html_res = analyze_html_structure(html, active_keyword, base_url=payload.url, is_own_site=is_own_site)
+    html_res = analyze_html_structure(html_content, active_keyword, base_url=payload.url, is_own_site=is_own_site)
 
     heuristic_meta = generate_heuristic_meta(title, text, active_keyword)
     suggested_title = geo_res.get("seo_title") or heuristic_meta["seo_title"]
     suggested_meta = geo_res.get("meta_description") or heuristic_meta["meta_description"]
-    suggested_title = html.unescape(suggested_title or "").strip()
-    suggested_meta = html.unescape(suggested_meta or "").strip()
+    suggested_title = html_lib.unescape(suggested_title or "").strip()
+    suggested_meta = html_lib.unescape(suggested_meta or "").strip()
 
     # Perbarui headline_suggestion dengan rekomendasi judul konkret
     if technical_res.get("headline_issues") or technical_res.get("headline_score", 100) < 100:

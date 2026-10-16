@@ -17,6 +17,11 @@
 - **Evaluasi GEO & E-E-A-T** — Penilaian kualitatif via **9Router AI Proxy Gateway** (opsional)
 - **Schema.org JSON-LD Generator** — Generate `NewsArticle` structured data yang valid untuk Google News
 - **Scraping Artikel Kompetitor** — Ekstrak dan analisis URL artikel menggunakan **newspaper4k**
+- **Google Trends Realtime (v3.0)** — Pemantauan topik pencarian terhangat Indonesia dan komparasi tren kata kunci
+- **Google Autocomplete & People Also Ask (v3.0)** — Penarikan kueri pencarian publik dan pertanyaan 5W+1H Google Suggest
+- **Google Instant Indexing API (v3.0)** — Notifikasi perayapan kilat Googlebot 1-5 menit setelah berita tayang
+- **Google Search Console Analytics (v3.0)** — Pelacakan performa artikel riil dan deteksi peluang emas *Low-Hanging Fruits*
+- **Audit Kanibalisasi Kata Kunci (v3.0)** — Deteksi benturan kata kunci dan judul antar artikel portal berita
 
 ---
 

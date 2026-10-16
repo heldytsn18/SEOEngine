@@ -52,3 +52,76 @@ class ContentImprovementRequest(BaseModel):
     focus_keyword: Optional[str] = Field(None, description="Kata kunci fokus target (opsional, jika kosong diekstrak otomatis)", examples=["PEDA KTNA 2028"])
     mode: Optional[str] = Field("all", description="Mode perbaikan: all, readability, lede, subheadings, headlines", examples=["all"])
     expand_content: Optional[bool] = Field(False, description="Kembangkan naskah jika kata < 350 kata", examples=[False])
+
+
+# ==============================================================================
+# V3.0 SCHEMAS: Google Trends, Instant Indexing, Search Console & Audit
+# ==============================================================================
+
+class TrendingTopicItem(BaseModel):
+    title: str
+    approx_traffic: Optional[str] = None
+    pub_date: Optional[str] = None
+    description: Optional[str] = None
+    news_title: Optional[str] = None
+    news_snippet: Optional[str] = None
+    news_url: Optional[str] = None
+    news_source: Optional[str] = None
+    picture_url: Optional[str] = None
+
+
+class TrendingTopicsResponse(BaseModel):
+    status: str = "success"
+    geo: str = "ID"
+    total: int
+    items: List[TrendingTopicItem]
+
+
+class AutocompleteRequest(BaseModel):
+    query: str = Field(..., description="Kueri awal pencarian Google", examples=["insentif guru paud"])
+    geo: Optional[str] = Field("ID", description="Wilayah pencarian (default: ID)", examples=["ID"])
+    lang: Optional[str] = Field("id", description="Bahasa pencarian (default: id)", examples=["id"])
+
+
+class PeopleAlsoAskRequest(BaseModel):
+    keyword: str = Field(..., description="Kata kunci utama artikel berita", examples=["insentif guru paud samarinda"])
+    geo: Optional[str] = Field("ID", examples=["ID"])
+
+
+class CompareTrendsRequest(BaseModel):
+    keywords: List[str] = Field(..., min_length=2, max_length=5, description="Daftar 2-5 kata kunci untuk dibandingkan minat pencariannya", examples=[["insentif guru paud", "gaji guru paud"]])
+    geo: Optional[str] = Field("ID", examples=["ID"])
+
+
+class IndexingNotificationRequest(BaseModel):
+    url: str = Field(..., description="URL lengkap berita yang ingin diindeks seketika oleh Google", examples=["https://borneoflash.com/insentif-guru-paud-samarinda"])
+    action: Optional[str] = Field("URL_UPDATED", description="Tipe notifikasi: URL_UPDATED atau URL_DELETED", examples=["URL_UPDATED"])
+
+
+class IndexingBatchRequest(BaseModel):
+    urls: List[str] = Field(..., min_length=1, max_length=100, description="Daftar URL berita untuk diindeks serentak")
+    action: Optional[str] = Field("URL_UPDATED", description="Tipe notifikasi: URL_UPDATED atau URL_DELETED", examples=["URL_UPDATED"])
+
+
+class GSCPerformanceRequest(BaseModel):
+    url: str = Field(..., description="URL lengkap artikel BorneoFlash untuk memeriksa metrik Google riil", examples=["https://borneoflash.com/insentif-guru-paud-samarinda"])
+    days: Optional[int] = Field(28, description="Rentang hari histori (misal: 7, 28, 90 hari)", examples=[28])
+
+
+class GSCOpportunitiesRequest(BaseModel):
+    site_url: Optional[str] = Field(None, description="URL situs Search Console (opsional, jika kosong dibaca dari .env)", examples=["sc-domain:borneoflash.com"])
+    days: Optional[int] = Field(28, description="Rentang histori hari", examples=[28])
+    min_impressions: Optional[int] = Field(100, description="Batas minimal tayang di Google", examples=[100])
+    max_ctr: Optional[float] = Field(0.05, description="Batas maksimal CTR (misal 0.05 = 5%)", examples=[0.05])
+
+
+class CannibalizationArticleItem(BaseModel):
+    id: Optional[str] = None
+    title: str = Field(..., examples=["Insentif Guru PAUD Samarinda Diperjuangkan"])
+    focus_keyword: Optional[str] = Field(None, examples=["insentif guru paud samarinda"])
+    url: Optional[str] = Field(None, examples=["https://borneoflash.com/artikel-1"])
+
+
+class CannibalizationAuditRequest(BaseModel):
+    articles: List[CannibalizationArticleItem] = Field(..., min_length=2, description="Daftar artikel yang ingin diaudit potensi saling bentur kata kuncinya")
+

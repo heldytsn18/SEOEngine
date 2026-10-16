@@ -8,4 +8,5 @@ newspaper4k
 beautifulsoup4
 lxml
 python-dotenv
+google-auth
 pytest
