@@ -166,6 +166,71 @@ def analyze_article(payload: ArticleAnalysisRequest):
     }
 
 
+@router.post("/check-score")
+def check_article_score(payload: ArticleAnalysisRequest):
+    """Cek Skor Instan (Local Fast Audit): Hanya menghitung ulang skor teknis, keterbacaan, headline, dan struktur HTML setelah revisi tanpa mengubah saran AI."""
+    active_keyword = (payload.focus_keyword or "").strip()
+    if not active_keyword:
+        active_keyword = extract_focus_keyword_heuristic(payload.title, payload.content)
+
+    # 1. Analisis Teknis Lokal (Sastrawi + Rule-Based)
+    technical_res = analyze_technical_seo(payload.title, payload.content, active_keyword)
+    if "error" in technical_res:
+        raise HTTPException(status_code=400, detail=technical_res["error"])
+
+    # 2. Analisis Struktur HTML
+    html_res = analyze_html_structure(payload.content, active_keyword, base_url=payload.base_url)
+
+    # 3. Audit aktif untuk Meta Description & SEO Title
+    meta_audit_suggestions = []
+    current_meta = (payload.meta_description or "").strip()
+    current_seo_title = (payload.seo_title or "").strip()
+
+    if current_meta:
+        if bool(re.search(r'&(?:ndash|mdash|nbsp|amp|quot|#\d+|#x[a-fA-F0-9]+);|<[^>]+>', current_meta)):
+            meta_audit_suggestions.append("⚠️ Deskripsi Meta mengandung entitas HTML mentah (&ndash;, &nbsp;) atau tag HTML. Bersihkan teks atau gunakan rekomendasi AI.")
+        if len(current_meta) < 70:
+            meta_audit_suggestions.append(f"⚠️ Deskripsi Meta terlalu pendek ({len(current_meta)} karakter). Target ideal: 120–160 karakter agar informatif di hasil pencarian.")
+        elif len(current_meta) > 165:
+            meta_audit_suggestions.append(f"⚠️ Deskripsi Meta terlalu panjang ({len(current_meta)} karakter). Google membatasi tampilan ringkasan sekitar 160 karakter.")
+        if active_keyword and active_keyword.lower() not in current_meta.lower():
+            meta_audit_suggestions.append(f"⚠️ Kata kunci fokus '{active_keyword}' belum ada di dalam Deskripsi Meta.")
+
+    if current_seo_title:
+        if bool(re.search(r'&(?:ndash|mdash|nbsp|amp|quot|#\d+|#x[a-fA-F0-9]+);|<[^>]+>', current_seo_title)):
+            meta_audit_suggestions.append("⚠️ Judul SEO mengandung entitas HTML mentah. Harap bersihkan karakter tersebut.")
+        if len(current_seo_title) > 65:
+            meta_audit_suggestions.append(f"⚠️ Judul SEO terlalu panjang ({len(current_seo_title)} karakter). Google membatasi tampilan judul sekitar 60–65 karakter.")
+        if active_keyword and active_keyword.lower() not in current_seo_title.lower():
+            meta_audit_suggestions.append(f"⚠️ Kata kunci fokus '{active_keyword}' sebaiknya disematkan di bagian depan Judul SEO.")
+
+    all_suggestions = []
+    all_suggestions.extend(meta_audit_suggestions)
+    all_suggestions.extend(technical_res.get("technical_suggestions", []))
+    all_suggestions.extend(html_res.get("html_suggestions", []))
+    all_suggestions = list(dict.fromkeys(all_suggestions))
+
+    tech_score = technical_res.get("seo_score", 0)
+    read_score = technical_res.get("readability_score", 0)
+    headline_score = technical_res.get("headline_score", 0)
+    overall_score = round((tech_score * 0.6) + (read_score * 0.4))
+
+    return {
+        "status": "success",
+        "data": {
+            "seo_score": tech_score,
+            "readability_score": read_score,
+            "headline_score": headline_score,
+            "headline_issues": technical_res.get("headline_issues", []),
+            "overall_score": overall_score,
+            "news_analysis": technical_res,
+            "html_structure_analysis": html_res,
+            "combined_suggestions": all_suggestions
+        },
+        "provider": "fastapi"
+    }
+
+
 @router.post("/analyze-url")
 def analyze_url(payload: URLAnalysisRequest):
     """Scrape & analisis URL artikel kompetitor dengan anti-bot header, newspaper4k, dan Beautiful Soup."""
