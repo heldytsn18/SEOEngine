@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException
 import logging
+import re
+import html
 
 from app.schemas.seo_schema import (
     ArticleAnalysisRequest,
@@ -72,6 +74,10 @@ def analyze_article(payload: ArticleAnalysisRequest):
         suggested_title = heuristic_meta["seo_title"]
         suggested_meta = heuristic_meta["meta_description"]
 
+    # Pastikan suggested metadata bersih dari entitas HTML (&ndash;, &nbsp;, dll)
+    suggested_title = html.unescape(suggested_title or "").strip()
+    suggested_meta = html.unescape(suggested_meta or "").strip()
+
     # Perbarui headline_suggestion dengan rekomendasi judul konkret
     if technical_res.get("headline_issues") or technical_res.get("headline_score", 100) < 100:
         technical_res["headline_suggestion"] = f"Gunakan judul alternatif: \"{suggested_title}\""
@@ -81,8 +87,34 @@ def analyze_article(payload: ArticleAnalysisRequest):
     eeat_score = geo_res.get("eeat_score", 0) if geo_res else tech_score
     overall_score = round((tech_score * 0.6) + (eeat_score * 0.4)) if geo_res else tech_score
 
+    # Audit aktif untuk Meta Description & SEO Title jika dikirimkan oleh pemanggil
+    meta_audit_suggestions = []
+    current_meta = (payload.meta_description or "").strip()
+    current_seo_title = (payload.seo_title or "").strip()
+
+    if current_meta:
+        if bool(re.search(r'&(?:ndash|mdash|nbsp|amp|quot|#\d+|#x[a-fA-F0-9]+);|<[^>]+>', current_meta)):
+            meta_audit_suggestions.append("⚠️ Deskripsi Meta mengandung entitas HTML mentah (&ndash;, &nbsp;) atau tag HTML. Bersihkan teks atau gunakan rekomendasi AI.")
+        if len(current_meta) < 70:
+            meta_audit_suggestions.append(f"⚠️ Deskripsi Meta terlalu pendek ({len(current_meta)} karakter). Target ideal: 120–160 karakter agar informatif di hasil pencarian.")
+        elif len(current_meta) > 165:
+            meta_audit_suggestions.append(f"⚠️ Deskripsi Meta terlalu panjang ({len(current_meta)} karakter). Google membatasi tampilan ringkasan sekitar 160 karakter.")
+        if active_keyword and active_keyword.lower() not in current_meta.lower():
+            meta_audit_suggestions.append(f"⚠️ Kata kunci fokus '{active_keyword}' belum ada di dalam Deskripsi Meta.")
+
+    if current_seo_title:
+        if bool(re.search(r'&(?:ndash|mdash|nbsp|amp|quot|#\d+|#x[a-fA-F0-9]+);|<[^>]+>', current_seo_title)):
+            meta_audit_suggestions.append("⚠️ Judul SEO mengandung entitas HTML mentah. Harap bersihkan karakter tersebut.")
+        if len(current_seo_title) > 65:
+            meta_audit_suggestions.append(f"⚠️ Judul SEO terlalu panjang ({len(current_seo_title)} karakter). Google membatasi tampilan judul sekitar 60–65 karakter.")
+        if active_keyword and active_keyword.lower() not in current_seo_title.lower():
+            meta_audit_suggestions.append(f"⚠️ Kata kunci fokus '{active_keyword}' sebaiknya disematkan di bagian depan Judul SEO.")
+
     all_suggestions = []
-    # Berikan rekomendasi judul konkret di urutan teratas jika judul belum ideal
+    # Prioritas teratas: masalah entitas kotor / panjang meta & judul yang sedang aktif
+    all_suggestions.extend(meta_audit_suggestions)
+
+    # Berikan rekomendasi judul konkret jika judul belum ideal
     if technical_res.get("headline_issues") or technical_res.get("headline_score", 100) < 100:
         all_suggestions.append(f"Saran judul: {suggested_title}")
     all_suggestions.extend(technical_res.get("technical_suggestions", []))

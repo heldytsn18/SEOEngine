@@ -7,6 +7,8 @@ class ArticleAnalysisRequest(BaseModel):
     content: str = Field(..., examples=["Balikpapan - Kepolisian Daerah Kalimantan Timur melakukan tindakan tegas..."])
     focus_keyword: Optional[str] = Field(None, description="Kata kunci fokus SEO (opsional, akan di-generate otomatis oleh AI jika kosong)", examples=["Judi Online Kaltim"])
     category: Optional[str] = Field(None, examples=["Hukum"])
+    seo_title: Optional[str] = Field(None, description="Judul SEO aktif saat ini (opsional untuk audit)", examples=["Polri Tindak Judi Online di Kaltim"])
+    meta_description: Optional[str] = Field(None, description="Deskripsi meta aktif saat ini (opsional untuk audit)", examples=["Kepolisian Daerah Kalimantan Timur menindak tegas pelaku judi online..."])
     use_ai_analysis: Optional[bool] = Field(True, description="Sertakan analisis GEO & E-E-A-T via 9Router")
     base_url: Optional[str] = Field(None, description="URL situs utama untuk deteksi link internal (opsional)", examples=["https://borneoflash.com"])
 
