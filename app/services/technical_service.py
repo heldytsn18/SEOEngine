@@ -1,4 +1,5 @@
 import re
+import html
 from typing import Dict, Any, List, Set, Tuple
 import logging
 
@@ -28,10 +29,12 @@ ABBREVIATIONS_ID: List[str] = [
 
 
 def clean_text(text: str) -> str:
-    """Membersihkan tag HTML dan karakter khusus, menghasilkan teks huruf kecil dengan spasi rapi."""
+    """Membersihkan entitas HTML, tag HTML, dan karakter khusus, menghasilkan teks huruf kecil dengan spasi rapi."""
     if not text:
         return ""
-    clean = re.sub(r'<[^>]+>', ' ', text)
+    # Unescape entitas HTML terlebih dahulu (&ndash; -> –, &nbsp; -> spasi)
+    unescaped = html.unescape(text)
+    clean = re.sub(r'<[^>]+>', ' ', unescaped)
     clean = re.sub(r'[^\w\s]', ' ', clean)
     return " ".join(clean.lower().split())
 
@@ -104,12 +107,27 @@ def extract_focus_keyword_heuristic(title: str, content: str = "") -> str:
 
 def generate_heuristic_meta(title: str, content: str, keyword: str = "") -> Dict[str, str]:
     """Generate judul SEO dan meta description fallback lokal jika AI tidak aktif."""
-    clean_c = clean_text(content)
-    raw_sentences = [s.strip() for s in re.split(r'[\.\n]+', clean_c) if s.strip()]
+    # 1. Unescape dan bersihkan tag HTML dengan mempertahankan kapitalisasi asli
+    unescaped = html.unescape(content or "")
+    plain_content = re.sub(r'<[^>]+>', ' ', unescaped)
+    plain_content = plain_content.replace('\u00A0', ' ')
+    plain_content = re.sub(r'\s+', ' ', plain_content).strip()
+
+    # 2. Hapus awalan dateline berita standar seperti "BorneoFlash.com, SAMARINDA – "
+    plain_content = re.sub(
+        r'^(?:[A-Za-z0-9\.\-]+\.(?:com|co\.id|id|net)\s*,\s*[A-Z\s]+\s*[\–\-\—]\s*)',
+        '',
+        plain_content,
+        flags=re.IGNORECASE
+    ).strip()
+
+    # 3. Ambil kalimat pembuka pertama yang representatif
+    raw_sentences = [s.strip() for s in re.split(r'[\.\n]+', plain_content) if len(s.strip().split()) >= 3]
     desc = ""
     for s in raw_sentences:
-        if len(desc) + len(s) + 1 <= 155:
-            desc = (desc + " " + s).strip()
+        candidate = (desc + ". " + s).strip() if desc else s
+        if len(candidate) <= 155:
+            desc = candidate
         else:
             break
     if not desc and raw_sentences:
