@@ -168,20 +168,53 @@ def analyze_article(payload: ArticleAnalysisRequest):
 
 @router.post("/check-score")
 def check_article_score(payload: ArticleAnalysisRequest):
-    """Cek Skor Instan (Local Fast Audit): Hanya menghitung ulang skor teknis, keterbacaan, headline, dan struktur HTML setelah revisi tanpa mengubah saran AI."""
-    active_keyword = (payload.focus_keyword or "").strip()
-    if not active_keyword:
-        active_keyword = extract_focus_keyword_heuristic(payload.title, payload.content)
+    """Cek Skor Artikel dengan AI 9Router: Menghitung ulang skor teknis, keterbacaan, headline, struktur HTML, serta evaluasi E-E-A-T mendalam via 9Router AI Gateway."""
+    user_keyword = (payload.focus_keyword or "").strip()
+    geo_res = {}
+    recommended_keyword = ""
 
-    # 1. Analisis Teknis Lokal (Sastrawi + Rule-Based)
-    technical_res = analyze_technical_seo(payload.title, payload.content, active_keyword)
+    # 1. Jalankan Analisis GEO via 9Router Gateway jika diaktifkan (evaluasi kualitas naskah & E-E-A-T secara cerdas)
+    if payload.use_ai_analysis:
+        geo_res = call_9router_for_geo(
+            payload.title,
+            payload.content,
+            user_keyword,
+            payload.category or "",
+            is_own_site=True
+        )
+        if geo_res.get("focus_keyword"):
+            recommended_keyword = geo_res["focus_keyword"].strip()
+
+    # 2. Jika AI tidak menghasilkan rekomendasi kata kunci, gunakan ekstraksi heuristik lokal
+    if not recommended_keyword:
+        recommended_keyword = extract_focus_keyword_heuristic(payload.title, payload.content)
+
+    audit_keyword = user_keyword if user_keyword else recommended_keyword
+
+    # 3. Analisis Teknis Lokal (Sastrawi + Rule-Based)
+    technical_res = analyze_technical_seo(payload.title, payload.content, audit_keyword)
     if "error" in technical_res:
         raise HTTPException(status_code=400, detail=technical_res["error"])
 
-    # 2. Analisis Struktur HTML
-    html_res = analyze_html_structure(payload.content, active_keyword, base_url=payload.base_url)
+    # 4. Analisis Struktur HTML
+    html_res = analyze_html_structure(payload.content, audit_keyword, base_url=payload.base_url)
 
-    # 3. Audit aktif untuk Meta Description & SEO Title
+    # 5. Tentukan saran SEO (prioritaskan hasil AI jika ada)
+    heuristic_meta = generate_heuristic_meta(payload.title, payload.content, recommended_keyword)
+    if geo_res and geo_res.get("seo_title"):
+        suggested_title = geo_res.get("seo_title") or payload.title
+        suggested_meta = geo_res.get("meta_description") or heuristic_meta["meta_description"]
+    else:
+        suggested_title = heuristic_meta["seo_title"]
+        suggested_meta = heuristic_meta["meta_description"]
+
+    suggested_title = html.unescape(suggested_title or "").strip()
+    suggested_meta = html.unescape(suggested_meta or "").strip()
+
+    if technical_res.get("headline_issues") or technical_res.get("headline_score", 100) < 100:
+        technical_res["headline_suggestion"] = f"Gunakan judul alternatif: \"{suggested_title}\""
+
+    # 6. Audit aktif untuk Meta Description & SEO Title
     meta_audit_suggestions = []
     current_meta = (payload.meta_description or "").strip()
     current_seo_title = (payload.seo_title or "").strip()
@@ -193,27 +226,48 @@ def check_article_score(payload: ArticleAnalysisRequest):
             meta_audit_suggestions.append(f"⚠️ Deskripsi Meta terlalu pendek ({len(current_meta)} karakter). Target ideal: 120–160 karakter agar informatif di hasil pencarian.")
         elif len(current_meta) > 165:
             meta_audit_suggestions.append(f"⚠️ Deskripsi Meta terlalu panjang ({len(current_meta)} karakter). Google membatasi tampilan ringkasan sekitar 160 karakter.")
-        if active_keyword and active_keyword.lower() not in current_meta.lower():
-            meta_audit_suggestions.append(f"⚠️ Kata kunci fokus '{active_keyword}' belum ada di dalam Deskripsi Meta.")
+        if audit_keyword and audit_keyword.lower() not in current_meta.lower():
+            meta_audit_suggestions.append(f"⚠️ Kata kunci fokus '{audit_keyword}' belum ada di dalam Deskripsi Meta.")
 
     if current_seo_title:
         if bool(re.search(r'&(?:ndash|mdash|nbsp|amp|quot|#\d+|#x[a-fA-F0-9]+);|<[^>]+>', current_seo_title)):
             meta_audit_suggestions.append("⚠️ Judul SEO mengandung entitas HTML mentah. Harap bersihkan karakter tersebut.")
         if len(current_seo_title) > 65:
             meta_audit_suggestions.append(f"⚠️ Judul SEO terlalu panjang ({len(current_seo_title)} karakter). Google membatasi tampilan judul sekitar 60–65 karakter.")
-        if active_keyword and active_keyword.lower() not in current_seo_title.lower():
-            meta_audit_suggestions.append(f"⚠️ Kata kunci fokus '{active_keyword}' sebaiknya disematkan di bagian depan Judul SEO.")
+        if audit_keyword and audit_keyword.lower() not in current_seo_title.lower():
+            meta_audit_suggestions.append(f"⚠️ Kata kunci fokus '{audit_keyword}' sebaiknya disematkan di bagian depan Judul SEO.")
 
     all_suggestions = []
     all_suggestions.extend(meta_audit_suggestions)
+    if technical_res.get("headline_issues") or technical_res.get("headline_score", 100) < 100:
+        all_suggestions.append(f"Saran judul: {suggested_title}")
     all_suggestions.extend(technical_res.get("technical_suggestions", []))
     all_suggestions.extend(html_res.get("html_suggestions", []))
+    if geo_res:
+        for component in ("experience", "expertise", "authoritativeness", "trustworthiness"):
+            comp_data = geo_res.get(component, {})
+            all_suggestions.extend(comp_data.get("suggestions", []))
     all_suggestions = list(dict.fromkeys(all_suggestions))
 
     tech_score = technical_res.get("seo_score", 0)
     read_score = technical_res.get("readability_score", 0)
     headline_score = technical_res.get("headline_score", 0)
-    overall_score = round((tech_score * 0.6) + (read_score * 0.4))
+    eeat_score = geo_res.get("eeat_score", 0) if geo_res else tech_score
+    overall_score = round((tech_score * 0.6) + (eeat_score * 0.4)) if geo_res else round((tech_score * 0.6) + (read_score * 0.4))
+
+    headline_angles = geo_res.get("headline_angles") if geo_res and geo_res.get("headline_angles") else {
+        "hard_news": payload.title,
+        "google_discover": f"{suggested_title} - Simak Faktanya",
+        "search_seo": suggested_title
+    }
+
+    social_snippets = geo_res.get("social_snippets") if geo_res and geo_res.get("social_snippets") else {
+        "instagram": f"📌 {payload.title}\n\nSimak ulasan selengkapnya di BorneoFlash.com!\n\n#BorneoFlash #BeritaKaltim #Balikpapan #IKN",
+        "whatsapp": f"📰 *{payload.title}*\n\nBaca artikel selengkapnya di BorneoFlash:\nhttps://borneoflash.com/",
+        "twitter": f"{payload.title} — Simak berita lengkapnya di BorneoFlash.com #Kaltim"
+    }
+
+    editor_notes = geo_res.get("editor_notes") if geo_res and "editor_notes" in geo_res else " ".join(all_suggestions) if all_suggestions else "Artikel sudah cukup baik, tidak ada catatan khusus."
 
     return {
         "status": "success",
@@ -221,9 +275,20 @@ def check_article_score(payload: ArticleAnalysisRequest):
             "seo_score": tech_score,
             "readability_score": read_score,
             "headline_score": headline_score,
+            "eeat_score": eeat_score,
             "headline_issues": technical_res.get("headline_issues", []),
             "overall_score": overall_score,
             "news_analysis": technical_res,
+            "eeat_analysis": geo_res if geo_res else DEFAULT_EEAT_ANALYSIS,
+            "seo_suggestions": {
+                "focus_keyword": recommended_keyword or audit_keyword,
+                "user_keyword": user_keyword,
+                "seo_title": suggested_title,
+                "meta_description": suggested_meta
+            },
+            "headline_angles": headline_angles,
+            "social_snippets": social_snippets,
+            "editor_notes": editor_notes,
             "html_structure_analysis": html_res,
             "combined_suggestions": all_suggestions
         },
