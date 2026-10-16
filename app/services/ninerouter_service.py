@@ -28,14 +28,22 @@ def call_9router_for_geo(
     keyword_text = keyword.strip() if keyword else ""
     meta_hint = f"Kata Kunci Meta Terdeteksi dari Halaman: {', '.join(meta_keywords[:6])}\n" if meta_keywords else ""
 
-    keyword_instruction = f"Kata Kunci Fokus yang dimasukkan penulis: \"{keyword_text}\"" if keyword_text else (
-        "Kata Kunci Fokus: (KOSONG)\n"
-        f"{meta_hint}"
-        "Instruksi Khusus Kata Kunci:\n"
-        f"- 'detected_competitor_keyword': Analisis judul, meta keywords, dan isi berita di atas, lalu tentukan kata kunci utama yang saat ini tercermin/dibidik oleh {'penulis naskah internal' if is_own_site else 'kompetitor/penulis artikel ini'}.\n"
-        f"- 'focus_keyword': Tentukan 1 rekomendasi kata kunci fokus terbaik (2-4 kata) yang memiliki potensi pencarian tinggi di Google untuk {'mengoptimasi naskah internal ini' if is_own_site else 'menulis artikel tandingan atau mengoptimasi artikel sendiri'}.\n"
-        "- 'keyword_variations': Berikan 2-4 variasi kata kunci turunan yang relevan untuk memperkaya artikel."
-    )
+    if keyword_text:
+        keyword_instruction = (
+            f"Kata Kunci Fokus Draf Penulis: \"{keyword_text}\"\n"
+            "Instruksi Khusus Kata Kunci:\n"
+            f"- 'focus_keyword': Evaluasi kata kunci draf penulis di atas terhadap isi naskah berita. Tentukan 1 rekomendasi kata kunci fokus terbaik (2-4 kata) yang paling berpotensi dicari pembaca di Google. Jika kata kunci draf penulis kurang spesifik atau kurang memuat entitas/lokasi penting artikel (misal draf 'Insentif Guru PAUD Swasta' dapat disempurnakan menjadi 'insentif guru paud samarinda'), berikan rekomendasi kata kunci yang disempurnakan tersebut. Jika kata kunci penulis sudah yang paling optimal, gunakan kata kunci tersebut.\n"
+            "- 'keyword_variations': Berikan 2-4 variasi kata kunci turunan yang relevan untuk memperkaya artikel.\n"
+        )
+    else:
+        keyword_instruction = (
+            "Kata Kunci Fokus: (KOSONG)\n"
+            f"{meta_hint}"
+            "Instruksi Khusus Kata Kunci:\n"
+            f"- 'detected_competitor_keyword': Analisis judul, meta keywords, dan isi berita di atas, lalu tentukan kata kunci utama yang saat ini tercermin/dibidik oleh {'penulis naskah internal' if is_own_site else 'kompetitor/penulis artikel ini'}.\n"
+            f"- 'focus_keyword': Tentukan 1 rekomendasi kata kunci fokus terbaik (2-4 kata) yang memiliki potensi pencarian tinggi di Google untuk {'mengoptimasi naskah internal ini' if is_own_site else 'menulis artikel tandingan atau mengoptimasi artikel sendiri'}.\n"
+            "- 'keyword_variations': Berikan 2-4 variasi kata kunci turunan yang relevan untuk memperkaya artikel.\n"
+        )
     category_instruction = f"Kategori/Rubrik Berita: \"{category.strip()}\"\n" if category and category.strip() else ""
     context_type = "Audit Naskah Web Sendiri (Portal BorneoFlash)" if is_own_site else "Analisis URL Berita / Kompetitor"
 

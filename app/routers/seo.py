@@ -43,30 +43,34 @@ DEFAULT_EEAT_ANALYSIS = {
 @router.post("/analyze")
 def analyze_article(payload: ArticleAnalysisRequest):
     """Analisis draf artikel: Generate metadata -> teknis SEO + struktur HTML + GEO/E-E-A-T."""
-    active_keyword = (payload.focus_keyword or "").strip()
+    user_keyword = (payload.focus_keyword or "").strip()
     geo_res = {}
+    recommended_keyword = ""
 
-    # 1. Jalankan Analisis GEO via 9Router (AI juga menghasilkan focus_keyword, seo_title, meta_description)
+    # 1. Jalankan Analisis GEO via 9Router (AI mengevaluasi naskah dan menghasilkan rekomendasi focus_keyword terbaik)
     if payload.use_ai_analysis:
-        geo_res = call_9router_for_geo(payload.title, payload.content, active_keyword, payload.category or "")
-        # Jika keyword awal kosong tapi AI berhasil generate focus_keyword, gunakan hasil AI
-        if not active_keyword and geo_res.get("focus_keyword"):
-            active_keyword = geo_res["focus_keyword"].strip()
+        geo_res = call_9router_for_geo(payload.title, payload.content, user_keyword, payload.category or "")
+        if geo_res.get("focus_keyword"):
+            recommended_keyword = geo_res["focus_keyword"].strip()
 
-    # 2. Jika keyword masih kosong (AI nonaktif atau gagal), gunakan ekstraksi heuristik lokal
-    if not active_keyword:
-        active_keyword = extract_focus_keyword_heuristic(payload.title, payload.content)
+    # 2. Jika AI tidak menghasilkan rekomendasi kata kunci, gunakan ekstraksi heuristik lokal
+    if not recommended_keyword:
+        recommended_keyword = extract_focus_keyword_heuristic(payload.title, payload.content)
 
-    # 3. Jalankan Analisis Teknis Lokal (Sastrawi + Rule-Based) menggunakan active_keyword
-    technical_res = analyze_technical_seo(payload.title, payload.content, active_keyword)
+    # Kata kunci yang digunakan untuk audit teknis artikel (sebaran, keyword density, lede):
+    # Gunakan kata kunci yang sedang dipasang oleh penulis jika ada; jika draf belum ada kata kunci, gunakan rekomendasi.
+    audit_keyword = user_keyword if user_keyword else recommended_keyword
+
+    # 3. Jalankan Analisis Teknis Lokal (Sastrawi + Rule-Based) menggunakan audit_keyword
+    technical_res = analyze_technical_seo(payload.title, payload.content, audit_keyword)
     if "error" in technical_res:
         raise HTTPException(status_code=400, detail=technical_res["error"])
 
     # 4. Jalankan Analisis Struktur HTML
-    html_res = analyze_html_structure(payload.content, active_keyword, base_url=payload.base_url)
+    html_res = analyze_html_structure(payload.content, audit_keyword, base_url=payload.base_url)
 
     # 5. Tentukan saran SEO (prioritaskan hasil AI jika ada, fallback ke heuristik lokal)
-    heuristic_meta = generate_heuristic_meta(payload.title, payload.content, active_keyword)
+    heuristic_meta = generate_heuristic_meta(payload.title, payload.content, recommended_keyword)
     if geo_res and geo_res.get("seo_title"):
         suggested_title = geo_res.get("seo_title") or payload.title
         suggested_meta = geo_res.get("meta_description") or heuristic_meta["meta_description"]
@@ -99,16 +103,16 @@ def analyze_article(payload: ArticleAnalysisRequest):
             meta_audit_suggestions.append(f"⚠️ Deskripsi Meta terlalu pendek ({len(current_meta)} karakter). Target ideal: 120–160 karakter agar informatif di hasil pencarian.")
         elif len(current_meta) > 165:
             meta_audit_suggestions.append(f"⚠️ Deskripsi Meta terlalu panjang ({len(current_meta)} karakter). Google membatasi tampilan ringkasan sekitar 160 karakter.")
-        if active_keyword and active_keyword.lower() not in current_meta.lower():
-            meta_audit_suggestions.append(f"⚠️ Kata kunci fokus '{active_keyword}' belum ada di dalam Deskripsi Meta.")
+        if audit_keyword and audit_keyword.lower() not in current_meta.lower():
+            meta_audit_suggestions.append(f"⚠️ Kata kunci fokus '{audit_keyword}' belum ada di dalam Deskripsi Meta.")
 
     if current_seo_title:
         if bool(re.search(r'&(?:ndash|mdash|nbsp|amp|quot|#\d+|#x[a-fA-F0-9]+);|<[^>]+>', current_seo_title)):
             meta_audit_suggestions.append("⚠️ Judul SEO mengandung entitas HTML mentah. Harap bersihkan karakter tersebut.")
         if len(current_seo_title) > 65:
             meta_audit_suggestions.append(f"⚠️ Judul SEO terlalu panjang ({len(current_seo_title)} karakter). Google membatasi tampilan judul sekitar 60–65 karakter.")
-        if active_keyword and active_keyword.lower() not in current_seo_title.lower():
-            meta_audit_suggestions.append(f"⚠️ Kata kunci fokus '{active_keyword}' sebaiknya disematkan di bagian depan Judul SEO.")
+        if audit_keyword and audit_keyword.lower() not in current_seo_title.lower():
+            meta_audit_suggestions.append(f"⚠️ Kata kunci fokus '{audit_keyword}' sebaiknya disematkan di bagian depan Judul SEO.")
 
     all_suggestions = []
     # Prioritas teratas: masalah entitas kotor / panjang meta & judul yang sedang aktif
@@ -146,7 +150,8 @@ def analyze_article(payload: ArticleAnalysisRequest):
             "news_analysis": technical_res,
             "eeat_analysis": geo_res if geo_res else DEFAULT_EEAT_ANALYSIS,
             "seo_suggestions": {
-                "focus_keyword": active_keyword,
+                "focus_keyword": recommended_keyword or audit_keyword,
+                "user_keyword": user_keyword,
                 "seo_title": suggested_title,
                 "meta_description": suggested_meta
             },
