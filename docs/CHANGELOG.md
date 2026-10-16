@@ -4,6 +4,34 @@ Semua perubahan penting pada BorneoFlash SEO Engine didokumentasikan di file ini
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id-ID/1.0.0/).
 
+## [3.0.0] — 2026-10-17
+
+### Ditambahkan
+- **Modul Google Trends & Search Demand Intelligence (`/api/v1/trends`)**:
+  - `GET /api/v1/trends/daily`: Topik pencarian terhangat hari ini dari Google Trends RSS resmi (traffic, headline, rujukan berita).
+  - `GET /api/v1/trends/autocomplete`: Saran kata kunci riil yang sedang aktif diketik pengguna di Google Search (Google Suggest API).
+  - `GET /api/v1/trends/questions`: Pertanyaan populer publik di Google (People Also Ask) berbasis formula 5W+1H Indonesia.
+  - `POST /api/v1/trends/compare`: Komparasi search demand & popularitas antara 2–5 kata kunci alternatif untuk penentuan kata kunci fokus terbaik.
+- **Modul Google Instant Indexing API (`/api/v1/indexing`)**:
+  - Integrasi resmi Google Indexing API v3 (`https://indexing.googleapis.com/v3/urlNotifications:publish`) via Google Service Account JSON.
+  - `GET /api/v1/indexing/status`: Cek kesiapan service account JSON.
+  - `POST /api/v1/indexing/notify`: Notifikasi instan URL_UPDATED atau URL_DELETED ke Googlebot agar artikel segera dirayapi (1–5 menit).
+  - `POST /api/v1/indexing/batch`: Pengiriman batch notifikasi perayapan hingga 100 URL berita sekaligus.
+- **Modul Google Search Console API (`/api/v1/gsc`)**:
+  - `GET /api/v1/gsc/status`: Cek kesiapan kredensial GSC.
+  - `POST /api/v1/gsc/url-performance`: Penarikan performa riil artikel (Clicks, Impressions, CTR, Position) langsung dari Google Search Console.
+  - `POST /api/v1/gsc/opportunities`: Deteksi peluang emas *Low-Hanging Fruits* (kueri dengan impresi tinggi di halaman 1–2 Google tapi CTR masih rendah).
+- **Modul Audit Kanibalisasi Kata Kunci (`/api/v1/audit`)**:
+  - `POST /api/v1/audit/cannibalization`: Deteksi benturan kata kunci fokus dan judul serupa antar artikel portal berita BorneoFlash via Jaccard similarity word-level & exact keyword match.
+- **Pengayaan Endpoint Eksisting**:
+  - `/api/v1/seo/analyze` & `/api/v1/seo/check-score` kini otomatis mengembalikan `google_search_insights` (autocomplete queries & people-also-ask) langsung dari Google Search tanpa breaking changes.
+- **Dependensi Baru**:
+  - `google-auth` untuk autentikasi OAuth2 JWT Google Service Account.
+
+### Diperbaiki
+- Mengatasi shadowing modul bawaan Python `html` pada fungsi scraping/analisis URL.
+- Memperbarui Pydantic validation field dari `min_items`/`max_items` ke `min_length`/`max_length` sesuai standar Pydantic v2.
+
 ---
 
 ## [2.2.0] — 2026-10-03
