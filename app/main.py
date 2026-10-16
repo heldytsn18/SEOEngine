@@ -34,7 +34,7 @@ async def verify_api_key(api_key: str = Security(api_key_header)):
 app = FastAPI(
     title="BorneoFlash SEO Engine Microservice",
     description="Engine analisis SEO Teknis & GEO berbasis PySastrawi dan 9Router AI",
-    version="2.3.0",
+    version="2.5.0",
     dependencies=[Security(verify_api_key)]
 )
 
@@ -44,7 +44,7 @@ app.include_router(seo.router)
 
 @app.get("/")
 def read_root():
-    return {"status": "online", "service": "BorneoFlash SEO Engine Microservice", "version": "2.3.0"}
+    return {"status": "online", "service": "BorneoFlash SEO Engine Microservice", "version": "2.5.0"}
 
 
 @app.get("/health")

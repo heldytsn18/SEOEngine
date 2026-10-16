@@ -44,7 +44,9 @@ def split_sentences_id(text: str) -> List[str]:
     if not text:
         return []
 
-    plain = re.sub(r'<[^>]+>', ' ', text)
+    unescaped = html.unescape(text or '')
+    plain = re.sub(r'<[^>]+>', ' ', unescaped)
+    plain = plain.replace('\u00A0', ' ')
     t = ' ' + plain.strip() + ' '
 
     for abb in ABBREVIATIONS_ID:
@@ -56,6 +58,7 @@ def split_sentences_id(text: str) -> List[str]:
     sentences = []
     for s in raw_sentences:
         clean_s = s.replace('__DOT__', '.').strip()
+        clean_s = re.sub(r'\s+', ' ', clean_s)
         if len(clean_s.split()) >= 2:
             sentences.append(clean_s)
     return sentences
@@ -65,18 +68,20 @@ def split_paragraphs(content: str) -> List[str]:
     """Ekstraksi paragraf dari teks atau dokumen HTML."""
     if not content:
         return []
-    if '<p' in content.lower():
-        raw_paras = re.findall(r'<p[^>]*>(.*?)</p>', content, flags=re.DOTALL | re.IGNORECASE)
+    unescaped = html.unescape(content or '')
+    if '<p' in unescaped.lower():
+        raw_paras = re.findall(r'<p[^>]*>(.*?)</p>', unescaped, flags=re.DOTALL | re.IGNORECASE)
     else:
-        raw_paras = re.split(r'\n\s*\n', content)
+        raw_paras = re.split(r'\n\s*\n', unescaped)
 
     paragraphs = []
     for p in raw_paras:
-        clean_p = re.sub(r'<[^>]+>', ' ', p).strip()
+        clean_p = re.sub(r'<[^>]+>', ' ', p).replace('\u00A0', ' ')
+        clean_p = re.sub(r'\s+', ' ', clean_p).strip()
         if len(clean_p.split()) >= 3:
             paragraphs.append(clean_p)
 
-    return paragraphs or ([content.strip()] if content.strip() else [])
+    return paragraphs or ([clean_text(unescaped)] if unescaped.strip() else [])
 
 
 def extract_focus_keyword_heuristic(title: str, content: str = "") -> str:
@@ -245,8 +250,15 @@ def analyze_readability(sentences: List[str], paragraphs: List[str], total_words
             score -= 8
 
         first_sample = long_sentences[0]
-        sample_words = first_sample.split()
-        sample_preview = " ".join(sample_words[:7]) + "..." if len(sample_words) > 7 else first_sample
+        clean_sample = html.unescape(first_sample)
+        clean_sample = re.sub(
+            r'^(?:[A-Za-z0-9\.\-]+\.(?:com|co\.id|id|net)\s*,\s*[A-Z\s]+\s*[\–\-\—]\s*)',
+            '',
+            clean_sample,
+            flags=re.IGNORECASE
+        ).strip()
+        sample_words = clean_sample.split()
+        sample_preview = " ".join(sample_words[:7]) + "..." if len(sample_words) > 7 else clean_sample
         suggestions.append(f"Terdapat {len(long_sentences)} kalimat dengan lebih dari 25 kata (contoh: \"{sample_preview}\"). Pecah kalimat panjang tersebut dengan tanda titik.")
 
     # Penalti Paragraf Terlalu Panjang

@@ -400,6 +400,8 @@ def analyze_url(payload: URLAnalysisRequest):
     heuristic_meta = generate_heuristic_meta(title, text, active_keyword)
     suggested_title = geo_res.get("seo_title") or heuristic_meta["seo_title"]
     suggested_meta = geo_res.get("meta_description") or heuristic_meta["meta_description"]
+    suggested_title = html.unescape(suggested_title or "").strip()
+    suggested_meta = html.unescape(suggested_meta or "").strip()
 
     # Perbarui headline_suggestion dengan rekomendasi judul konkret
     if technical_res.get("headline_issues") or technical_res.get("headline_score", 100) < 100:
