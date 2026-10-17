@@ -29,8 +29,28 @@ BROWSER_USER_AGENTS = [
 ]
 
 
+def validate_safe_url(url: str) -> None:
+    """Validasi URL untuk mencegah kerentanan SSRF (Server-Side Request Forgery)."""
+    clean_url = (url or "").strip()
+    parsed = urlparse(clean_url)
+    if parsed.scheme not in ("http", "https"):
+        raise Exception("Skema URL tidak didukung. Hanya URL 'http://' atau 'https://' yang diizinkan.")
+    hostname = (parsed.hostname or "").lower()
+    if not hostname:
+        raise Exception("Nama host pada URL tidak valid.")
+
+    blocked_hosts = {"localhost", "127.0.0.1", "0.0.0.0", "::1"}
+    if hostname in blocked_hosts or hostname.endswith(".local") or hostname.endswith(".internal"):
+        raise Exception("Akses ke host lokal/internal tidak diizinkan.")
+
+    if re.match(r'^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|169\.254\.)', hostname):
+        raise Exception("Akses ke alamat IP jaringan privat/internal tidak diizinkan.")
+
+
 def fetch_html_with_browser_headers(url: str, timeout: int = 20) -> str:
     """Mengambil HTML halaman artikel dengan browser headers realistis untuk mencegah blokir 403 Forbidden."""
+    clean_url = (url or "").strip()
+    validate_safe_url(clean_url)
     last_error = None
 
     for ua in BROWSER_USER_AGENTS:

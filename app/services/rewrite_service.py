@@ -60,6 +60,13 @@ def rewrite_article_from_url(
     if not source_text.strip():
         raise Exception("Tidak ada konten teks yang dapat diekstrak dari URL target.")
 
+    word_count_source = len(source_text.strip().split())
+    if word_count_source < 30:
+        raise Exception(
+            f"Konten artikel dari URL sumber terlalu pendek ({word_count_source} kata). "
+            "Halaman mungkin dilindungi proteksi bot/WAF, memerlukan login, atau bukan halaman artikel berita."
+        )
+
     # 2. Tentukan target focus keyword
     target_keyword = (focus_keyword or "").strip()
     if not target_keyword:
@@ -168,12 +175,29 @@ Berikan output JSON SAJA tanpa markdown block atau teks pembuka, dengan format p
             "suggested_tags": meta_keywords[:4] if meta_keywords else ["Berita Terkini"]
         }
 
-    rewritten_title = ai_data.get("title", source_title)
-    rewritten_html = ai_data.get("content_html", "")
-    rewritten_plain = ai_data.get("content_plain", "")
+    import html as html_lib
+
+    raw_title = ai_data.get("title", source_title) or ""
+    rewritten_title = html_lib.unescape(raw_title).strip()
+    rewritten_html = ai_data.get("content_html", "") or ""
+    rewritten_plain = ai_data.get("content_plain", "") or ""
+    rewritten_lede = html_lib.unescape(ai_data.get("lede", "") or "").strip()
+    rewritten_meta = html_lib.unescape(ai_data.get("meta_description", "") or "").strip()
+
+    # Normalisasi tag H1 menjadi H2 dan heading markdown jika ada
+    rewritten_html = re.sub(r'<\s*h1[^>]*>(.*?)<\s*/\s*h1\s*>', r'<h2>\1</h2>', rewritten_html, flags=re.I)
+    rewritten_html = re.sub(r'^###\s+(.*?)$', r'<h2>\1</h2>', rewritten_html, flags=re.M)
+    rewritten_html = re.sub(r'^##\s+(.*?)$', r'<h2>\1</h2>', rewritten_html, flags=re.M)
+
     if not rewritten_plain and rewritten_html:
         rewritten_plain = re.sub(r'<[^>]+>', ' ', rewritten_html)
         rewritten_plain = re.sub(r'\s+', ' ', rewritten_plain).strip()
+
+    title_alts = [
+        html_lib.unescape(str(t)).strip()
+        for t in ai_data.get("title_alternatives", [])
+        if t and str(t).strip()
+    ]
 
     # 4. Evaluasi Teknis SEO & Readability pada Naskah Baru
     tech_eval = analyze_technical_seo(rewritten_title, rewritten_plain, target_keyword)
@@ -194,21 +218,23 @@ Berikan output JSON SAJA tanpa markdown block atau teks pembuka, dengan format p
     # 6. Format Atribusi Sumber Sesuai Etika Jurnalistik
     domain_clean = source_domain.replace("www.", "")
     attribution_quote = f"Disadur dari pemberitaan {domain_clean} dengan sudut pandang redaksional BorneoFlash."
+    top_image = extracted.get("top_image") or ""
 
     return {
         "article": {
             "title": rewritten_title,
-            "title_alternatives": ai_data.get("title_alternatives", []),
-            "lede": ai_data.get("lede", ""),
+            "title_alternatives": title_alts,
+            "lede": rewritten_lede,
             "content": rewritten_html,
             "content_plain": rewritten_plain,
+            "featured_image_url": top_image,
             "word_count": word_count,
             "reading_time_minutes": reading_time
         },
         "seo_metadata": {
             "focus_keyword": ai_data.get("focus_keyword", target_keyword),
             "keyword_variations": ai_data.get("keyword_variations", []),
-            "meta_description": ai_data.get("meta_description", ""),
+            "meta_description": rewritten_meta,
             "suggested_category": ai_data.get("suggested_category", "Daerah"),
             "suggested_tags": ai_data.get("suggested_tags", [])
         },
@@ -223,6 +249,7 @@ Berikan output JSON SAJA tanpa markdown block atau teks pembuka, dengan format p
             "source_url": url,
             "source_domain": source_domain,
             "source_title": source_title,
+            "source_image": top_image,
             "original_word_count": extracted.get("word_count", 0),
             "attribution_quote": attribution_quote
         }

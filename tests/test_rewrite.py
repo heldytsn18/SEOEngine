@@ -32,9 +32,10 @@ def test_rewrite_url_endpoint(mock_post, mock_extract):
         "url": "https://kaltim.tribunnews.com/berita-unmul",
         "domain": "kaltim.tribunnews.com",
         "title": "Rudianto Terpilih Rektor Unmul Putaran Akhir",
-        "text": "Samarinda - Pemilihan rektor Universitas Mulawarman selesai digelar di gedung rektorat.",
+        "text": "Samarinda - Pemilihan rektor Universitas Mulawarman selesai digelar di gedung rektorat lantai empat pada Selasa pagi. Proses pemilihan berlangsung khidmat dan tertib diikuti oleh seluruh anggota Senat Universitas Mulawarman serta perwakilan dari Kementerian Pendidikan Kebudayaan Riset dan Teknologi. Dalam pemungutan suara putaran akhir tersebut, Prof Rudianto Amirta berhasil meraih suara terbanyak mengungguli dua calon lainnya.",
         "meta_keywords": ["Rektor Unmul", "Rudianto Amirta"],
-        "word_count": 300
+        "word_count": 300,
+        "top_image": "https://kaltim.tribunnews.com/images/rektor-unmul.jpg"
     }
 
     # Mock response 9Router AI
@@ -71,6 +72,31 @@ def test_rewrite_url_endpoint(mock_post, mock_extract):
     assert "source_metadata" in data
     assert data["article"]["title"] == "Rudianto Amirta Terpilih Jadi Rektor Unmul 2026-2030"
     assert "content" in data["article"]
+    assert data["article"]["featured_image_url"] == "https://kaltim.tribunnews.com/images/rektor-unmul.jpg"
     assert data["seo_metadata"]["focus_keyword"] == "Rektor Unmul 2026"
     assert data["source_metadata"]["source_domain"] == "kaltim.tribunnews.com"
+    assert data["source_metadata"]["source_image"] == "https://kaltim.tribunnews.com/images/rektor-unmul.jpg"
     assert "attribution_quote" in data["source_metadata"]
+
+
+def test_rewrite_url_ssrf_protection():
+    # URL lokal/private harus ditolak dengan status 400
+    res = client.post("/api/v1/seo/rewrite-url", json={"url": "http://127.0.0.1:8000/secret"})
+    assert res.status_code == 400
+    assert "tidak diizinkan" in res.json()["detail"].lower()
+
+
+@patch("app.services.rewrite_service.extract_article_content")
+def test_rewrite_url_short_text_rejected(mock_extract):
+    mock_extract.return_value = {
+        "url": "https://example.com/blocked",
+        "domain": "example.com",
+        "title": "Blocked",
+        "text": "Please enable JavaScript to view this website.",
+        "meta_keywords": [],
+        "word_count": 7
+    }
+
+    res = client.post("/api/v1/seo/rewrite-url", json={"url": "https://example.com/blocked"})
+    assert res.status_code == 400
+    assert "terlalu pendek" in res.json()["detail"].lower()

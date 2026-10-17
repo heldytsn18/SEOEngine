@@ -516,10 +516,12 @@ def analyze_taxonomy(payload: TaxonomyAnalysisRequest):
 @router.post("/rewrite-url")
 def rewrite_url(payload: URLRewriteRequest):
     """Scrape artikel dari URL dan tulis ulang menjadi naskah berita baru yang orisinal, ber-H2, dan ber-SEO tinggi."""
+    clean_url = (payload.url or "").strip()
+    clean_kw = (payload.focus_keyword or "").strip() if payload.focus_keyword else None
     try:
         result = rewrite_article_from_url(
-            url=payload.url,
-            focus_keyword=payload.focus_keyword,
+            url=clean_url,
+            focus_keyword=clean_kw,
             tone=payload.tone or "straight_news",
             local_perspective=payload.local_perspective or "Kalimantan Timur"
         )
