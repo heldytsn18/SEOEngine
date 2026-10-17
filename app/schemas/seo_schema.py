@@ -41,9 +41,9 @@ class TaxonomyAnalysisRequest(BaseModel):
 
 class URLRewriteRequest(BaseModel):
     url: str = Field(..., examples=["https://kaltim.tribunnews.com/tribun-etam/1168317/rudianto-salip-abdunnur-di-putaran-akhir-74-suara-antarkan-guru-besar-kehutanan-jadi-rektor-unmul"])
-    focus_keyword: Optional[str] = Field(None, description="Kata kunci fokus (opsional, akan dideteksi otomatis jika kosong)", examples=["Rektor Unmul 2026"])
-    tone: Optional[str] = Field("straight_news", description="Gaya penulisan: straight_news, investigative, feature, press_release", examples=["straight_news"])
-    local_perspective: Optional[str] = Field("Kalimantan Timur", description="Fokus perspektif lokal redaksi", examples=["Kalimantan Timur"])
+    focus_keyword: Optional[str] = Field(None, description="Kata kunci fokus (opsional, jika kosong ditentukan otomatis oleh AI)", examples=["Rektor Unmul 2026"])
+    tone: Optional[str] = Field(None, description="Gaya penulisan: straight_news, investigative, feature, press_release (opsional, jika kosong dipilih otomatis oleh AI)", examples=["straight_news"])
+    local_perspective: Optional[str] = Field(None, description="Fokus perspektif lokal redaksi (opsional, jika kosong dianalisis otomatis oleh AI)", examples=["Kalimantan Timur"])
 
 
 class ContentImprovementRequest(BaseModel):

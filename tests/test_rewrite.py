@@ -79,6 +79,58 @@ def test_rewrite_url_endpoint(mock_post, mock_extract):
     assert "attribution_quote" in data["source_metadata"]
 
 
+@patch("app.services.rewrite_service.extract_article_content")
+@patch("app.services.rewrite_service.requests.post")
+def test_rewrite_url_auto_ai_mode(mock_post, mock_extract):
+    """Test ketika focus_keyword, tone, dan local_perspective kosong/dihapus agar AI isi sendiri."""
+    mock_extract.return_value = {
+        "url": "https://antaranews.com/berita/123/ikn-nusantara",
+        "domain": "antaranews.com",
+        "title": "Pembangunan IKN Terus Berjalan Sesuai Rencana",
+        "text": "Nusantara - Otorita Ibu Kota Nusantara menyatakan pembangunan infrastruktur dasar tahap dua berlangsung tepat waktu. Berbagai fasilitas publik dan hunian ASN mulai disiapkan menyambut pemindahan aparatur sipil negara secara bertahap pada akhir semester ini.",
+        "meta_keywords": [],
+        "word_count": 280,
+        "top_image": "https://antaranews.com/ikn.jpg"
+    }
+
+    mock_post.return_value.status_code = 200
+    mock_post.return_value.json.return_value = {
+        "choices": [{
+            "message": {
+                "content": """{
+                    "title": "Pembangunan Infrastruktur IKN Tahap Dua Berjalan Tepat Waktu",
+                    "title_alternatives": ["Otorita IKN Siapkan Hunian ASN Tahap Dua"],
+                    "lede": "NUSANTARA - Pembangunan infrastruktur dasar di Ibu Kota Nusantara terus dikebut.",
+                    "content_html": "<p>NUSANTARA - Pembangunan...</p><h2>Progres Tahap Dua</h2><p>Fasilitas publik siap...</p>",
+                    "content_plain": "NUSANTARA - Pembangunan...\\n\\nProgres Tahap Dua\\n\\nFasilitas publik siap...",
+                    "focus_keyword": "Pembangunan Infrastruktur IKN",
+                    "keyword_variations": ["Infrastruktur IKN", "Hunian ASN IKN"],
+                    "meta_description": "Pembangunan infrastruktur dasar IKN tahap dua dipastikan tepat waktu menyambut pemindahan ASN.",
+                    "suggested_category": "Daerah",
+                    "suggested_tags": ["IKN", "Infrastruktur", "ASN"],
+                    "detected_tone": "Straight News (Otomatis)",
+                    "perspective_applied": "Kalimantan Timur / IKN"
+                }"""
+            }
+        }]
+    }
+
+    # Kirim request HANYA dengan URL (focus_keyword, tone, local_perspective kosong/None)
+    res = client.post("/api/v1/seo/rewrite-url", json={
+        "url": "https://antaranews.com/berita/123/ikn-nusantara"
+    })
+
+    assert res.status_code == 200
+    data = res.json()["data"]
+    assert data["article"]["title"] == "Pembangunan Infrastruktur IKN Tahap Dua Berjalan Tepat Waktu"
+    assert data["article"]["featured_image_url"] == "https://antaranews.com/ikn.jpg"
+    # Keyword, tone, dan perspektif otomatis ditentukan AI
+    assert data["seo_metadata"]["focus_keyword"] == "Pembangunan Infrastruktur IKN"
+    assert data["seo_metadata"]["detected_tone"] == "Straight News (Otomatis)"
+    assert data["seo_metadata"]["perspective_applied"] == "Kalimantan Timur / IKN"
+
+
+
 def test_rewrite_url_ssrf_protection():
     # URL lokal/private harus ditolak dengan status 400
     res = client.post("/api/v1/seo/rewrite-url", json={"url": "http://127.0.0.1:8000/secret"})

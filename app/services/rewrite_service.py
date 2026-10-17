@@ -47,10 +47,16 @@ def calculate_text_similarity(original_text: str, rewritten_text: str) -> float:
 def rewrite_article_from_url(
     url: str,
     focus_keyword: Optional[str] = None,
-    tone: str = "straight_news",
-    local_perspective: str = "Kalimantan Timur"
+    tone: Optional[str] = None,
+    local_perspective: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Mengambil naskah dari URL, lalu menulis ulang menjadi artikel berita baru berstandar SEO tinggi."""
+    """Mengambil naskah dari URL, lalu menulis ulang menjadi artikel berita baru berstandar SEO tinggi.
+    
+    Jika focus_keyword, tone, atau local_perspective kosong/None, AI akan secara otomatis:
+    - Menentukan kata kunci fokus bernilai SEO tinggi berdasarkan isi berita asal.
+    - Memilih gaya penulisan (tone) yang paling tepat sesuai genre berita.
+    - Menentukan perspektif wilayah yang relevan secara cerdas.
+    """
     # 1. Scrape & parse artikel sumber
     extracted = extract_article_content(url)
     source_title = extracted.get("title") or ""
@@ -67,45 +73,75 @@ def rewrite_article_from_url(
             "Halaman mungkin dilindungi proteksi bot/WAF, memerlukan login, atau bukan halaman artikel berita."
         )
 
-    # 2. Tentukan target focus keyword
-    target_keyword = (focus_keyword or "").strip()
-    if not target_keyword:
+    # 2. Tentukan target focus keyword (mode otomatis jika tidak diisi)
+    auto_keyword_mode = not bool(focus_keyword and focus_keyword.strip())
+    if not auto_keyword_mode:
+        target_keyword = focus_keyword.strip()
+        keyword_instruction = f'Kata Kunci Fokus yang Wajib Ditargetkan: "{target_keyword}". Wajib disematkan di judul, di 50 kata pertama lede, dan di minimal 1 subheading H2.'
+    else:
         target_keyword = (
             extracted.get("detected_keyword_heuristic") or
             (meta_keywords[0] if meta_keywords else "") or
             extract_focus_keyword_heuristic(source_title, source_text)
         ).strip()
+        keyword_instruction = (
+            'Kata Kunci Fokus: TENTUKAN SENDIRI secara cerdas kata kunci fokus utama (focus keyword) '
+            'yang paling bernilai SEO tinggi, spesifik, dan sering dicari masyarakat di Google berdasarkan substansi berita asal. '
+            'Sisipkan kata kunci pilihan Anda tersebut di judul, di 50 kata pertama lede, dan di minimal 1 subheading H2.'
+        )
 
     current_date = datetime.now().strftime("%Y-%m-%d")
     source_domain = extracted.get("domain", "")
 
-    # 3. Prompt Jurnalisme & SEO ke 9Router AI
+    # 3. Tone & Perspektif (Otomatis jika None / kosong)
     tone_instructions = {
         "straight_news": "Gaya berita langsung (straight news/hard news) yang padat, lugas, faktual, dan objektif.",
         "investigative": "Gaya investigatif mendalam yang menggali konteks, sebab-akibat, dan keakuratan fakta.",
         "feature": "Gaya human-interest/feature yang bertutur mengalir, deskriptif, dan memikat pembaca.",
         "press_release": "Gaya rilis pers profesional yang mengedepankan informasi inti, pernyataan resmi, dan data."
     }
-    selected_tone = tone_instructions.get(tone, tone_instructions["straight_news"])
+
+    clean_tone = (tone or "").strip().lower()
+    if clean_tone and clean_tone in tone_instructions:
+        tone_instruction = f"Gaya Penulisan Terpilih: {tone_instructions[clean_tone]}"
+        default_tone_name = clean_tone.replace("_", " ").title()
+    else:
+        tone_instruction = (
+            "Gaya Penulisan: Analisis jenis naskah secara otomatis dan pilihlah gaya penulisan terbaik "
+            "(apakah straight news untuk berita aktual, feature untuk human-interest, investigatif untuk pengungkapan fakta, "
+            "atau press release untuk rilis resmi instansi)."
+        )
+        default_tone_name = "Straight News (Otomatis)"
+
+    clean_perspective = (local_perspective or "").strip()
+    if clean_perspective:
+        perspective_instruction = f"Perspektif Wilayah: Prioritaskan relevansi untuk wilayah {clean_perspective} jika ada keterkaitan peristiwa."
+        default_perspective_name = clean_perspective
+    else:
+        perspective_instruction = (
+            "Perspektif Wilayah: Tentukan secara cerdas: jika peristiwa berkaitan dengan Kalimantan Timur, IKN Nusantara, atau Balikpapan, "
+            "tonjolkan relevansi serta dampaknya bagi publik setempat; jika berita nasional atau internasional murni, "
+            "bawakan secara objektif dengan sudut pandang redaksional BorneoFlash."
+        )
+        default_perspective_name = "Kalimantan Timur / Redaksional"
 
     prompt = f"""
 Bertindaklah sebagai Senior News Editor & Jurnalis Berita Indonesia terkemuka untuk media daring.
 Tugas Anda: Tulis ulang (rewrite) artikel berita berikut menjadi naskah berita BARU yang orisinal, kaya informasi, dan berstandar SEO tinggi untuk redaksi portal berita.
 
 Konteks Waktu: Hari ini adalah tanggal {current_date}. Jangan anggap tahun berjalan sebagai masa depan.
-Perspektif Wilayah: Prioritaskan relevansi untuk wilayah {local_perspective} jika ada keterkaitan peristiwa.
-Gaya Penulisan: {selected_tone}
+{perspective_instruction}
+{tone_instruction}
 
 Data Berita Asal:
 - Judul Asal: {source_title}
-- Kata Kunci Fokus Target: "{target_keyword}"
 - Sumber Asal: {source_domain}
 - Isi Berita Asal:
 {source_text[:2500]}
 
 ATURAN STRUKTUR & JURNALISME:
 1. Piramida Terbalik: Paragraf pembuka (lede) wajib merangkum fakta utama 5W1H (Siapa, Apa, Kapan, Di mana, Mengapa, Bagaimana) secara padat dan menarik.
-2. Penempatan Keyword: Sisipkan frasa kunci "{target_keyword}" di judul, di paragraf pembuka (50 kata pertama), dan di minimal 1 subheading H2.
+2. {keyword_instruction}
 3. Subheading: Bagi badan berita menjadi 2 sampai 3 bagian menggunakan tag HTML <h2>. Contoh: <h2>Dinamika Pemilihan di Senat Tertutup</h2>.
 4. Format Isi: Tulis naskah dalam format tag HTML rapi (<p> untuk paragraf berita dan <h2> untuk subjudul). Jangan gunakan tag <h1> atau <h3>.
 5. Panjang Naskah: Kembangkan naskah berita menjadi 350 hingga 600 kata dengan kalimat-kalimat efektif (hindari kalimat berbelit > 25 kata).
@@ -125,11 +161,13 @@ Berikan output JSON SAJA tanpa markdown block atau teks pembuka, dengan format p
   "lede": "<Paragraf pembuka 5W1H lengkap dengan kata kunci>",
   "content_html": "<p>Paragraf lede...</p><h2>Subjudul 1</h2><p>Paragraf naskah...</p><h2>Subjudul 2</h2><p>Paragraf penutup...</p>",
   "content_plain": "<Naskah teks bersih tanpa HTML, dipisahkan baris baru ganda per paragraf>",
-  "focus_keyword": "{target_keyword}",
+  "focus_keyword": "<Kata kunci fokus target>",
   "keyword_variations": ["<variasi keyword 1>", "<variasi keyword 2>", "<variasi keyword 3>"],
   "meta_description": "<Meta description ringkas dan padat 130-150 karakter>",
   "suggested_category": "<Nama Kategori>",
-  "suggested_tags": ["<Tag 1>", "<Tag 2>", "<Tag 3>", "<Tag 4>"]
+  "suggested_tags": ["<Tag 1>", "<Tag 2>", "<Tag 3>", "<Tag 4>"],
+  "detected_tone": "<Gaya penulisan yang diterapkan>",
+  "perspective_applied": "<Perspektif wilayah yang diterapkan>"
 }}
 """
 
@@ -172,10 +210,18 @@ Berikan output JSON SAJA tanpa markdown block atau teks pembuka, dengan format p
             "keyword_variations": meta_keywords[1:4] if len(meta_keywords) > 1 else [],
             "meta_description": source_text[:140] + "...",
             "suggested_category": "Berita",
-            "suggested_tags": meta_keywords[:4] if meta_keywords else ["Berita Terkini"]
+            "suggested_tags": meta_keywords[:4] if meta_keywords else ["Berita Terkini"],
+            "detected_tone": default_tone_name,
+            "perspective_applied": default_perspective_name
         }
 
     import html as html_lib
+
+    # Jika mode auto keyword dan AI menentukan kata kunci yang valid, gunakan pilihan AI untuk evaluasi teknis SEO
+    if auto_keyword_mode and ai_data.get("focus_keyword"):
+        raw_ai_kw = str(ai_data["focus_keyword"]).strip()
+        if raw_ai_kw and len(raw_ai_kw) <= 60 and not raw_ai_kw.startswith("<"):
+            target_keyword = raw_ai_kw
 
     raw_title = ai_data.get("title", source_title) or ""
     rewritten_title = html_lib.unescape(raw_title).strip()
@@ -236,7 +282,9 @@ Berikan output JSON SAJA tanpa markdown block atau teks pembuka, dengan format p
             "keyword_variations": ai_data.get("keyword_variations", []),
             "meta_description": rewritten_meta,
             "suggested_category": ai_data.get("suggested_category", "Daerah"),
-            "suggested_tags": ai_data.get("suggested_tags", [])
+            "suggested_tags": ai_data.get("suggested_tags", []),
+            "detected_tone": ai_data.get("detected_tone", default_tone_name),
+            "perspective_applied": ai_data.get("perspective_applied", default_perspective_name)
         },
         "quality_metrics": {
             "seo_score": tech_eval.get("seo_score", 0),
