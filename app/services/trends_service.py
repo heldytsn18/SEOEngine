@@ -91,11 +91,8 @@ def fetch_daily_trends(geo: str = "ID") -> List[Dict[str, Any]]:
         return []
 
 
-def fetch_google_autocomplete(query: str, geo: str = "ID", lang: str = "id") -> List[str]:
-    """Mengambil saran kueri pencarian Google Autocomplete (Google Suggest API).
-    
-    Cepat, gratis, tanpa rate limit ketat, mencerminkan apa yang sedang diketik pengguna di Google.
-    """
+def _fetch_raw_autocomplete(query: str, geo: str = "ID", lang: str = "id") -> List[str]:
+    """Helper internal untuk mengambil saran Google Suggest API mentah."""
     clean_q = query.strip()
     if not clean_q:
         return []
@@ -119,33 +116,115 @@ def fetch_google_autocomplete(query: str, geo: str = "ID", lang: str = "id") -> 
         return []
 
 
+def fetch_google_autocomplete(query: str, geo: str = "ID", lang: str = "id") -> List[str]:
+    """Mengambil saran kueri pencarian Google Autocomplete (Google Suggest API).
+    
+    Dilengkapi mekanisme dekomposisi kueri cerdas (Query Relaxation):
+    Jika kueri terlalu spesifik/panjang dan Google Suggest tidak mengembalikan hasil exact match,
+    sistem secara otomatis mengekstrak kata kunci inti dan mengumpulkan variasi pencarian Google
+    yang relevan bagi redaktur berita.
+    """
+    clean_q = query.strip()
+    if not clean_q:
+        return []
+
+    # 1. Coba kueri asli
+    results = _fetch_raw_autocomplete(clean_q, geo=geo, lang=lang)
+    if len(results) >= 4:
+        return results[:8]
+
+    # 2. Relaksasi kueri jika hasil minim/kosong
+    stopwords = {
+        "cegah", "sejak", "dini", "yang", "di", "ke", "dari", "untuk", "pada", "dan", "atau",
+        "ini", "itu", "adalah", "dalam", "bisa", "akan", "sudah", "telah", "susun", "menggelar",
+        "rapat", "bahwa", "oleh", "tentang", "agar", "supaya", "saat", "juga", "bagi", "komisi"
+    }
+    words = [re.sub(r"[^\w]", "", w.lower()) for w in clean_q.split() if len(w) > 2]
+    meaningful = [w for w in words if w not in stopwords]
+
+    candidates = []
+    # Kombinasi pasangan kata berdampingan (bigram)
+    if len(meaningful) >= 2:
+        for i in range(len(meaningful) - 1):
+            candidates.append(f"{meaningful[i]} {meaningful[i+1]}")
+        # Kombinasi kata pertama dan kata terakhir
+        if len(meaningful) >= 3:
+            candidates.append(f"{meaningful[0]} {meaningful[-1]}")
+
+    # Kombinasi kata tunggal signifikan
+    for w in meaningful:
+        if len(w) >= 4 and w not in candidates:
+            candidates.append(w)
+
+    for cand in candidates:
+        sub_res = _fetch_raw_autocomplete(cand, geo=geo, lang=lang)
+        for s in sub_res:
+            if s not in results:
+                results.append(s)
+            if len(results) >= 8:
+                break
+        if len(results) >= 8:
+            break
+
+    return results[:8]
+
+
 def fetch_people_also_ask(keyword: str, geo: str = "ID") -> List[str]:
-    """Mengambil pertanyaan umum yang dicari publik di Google (People Also Ask) berbasis pola tanya 5W+1H Indonesia."""
+    """Mengambil pertanyaan umum yang dicari publik di Google (People Also Ask) berbasis pola tanya 5W+1H Indonesia.
+    
+    Dilengkapi fallback otomatis ke formula kurasi jurnalistik jika data Google Suggest kueri minim.
+    """
     clean_kw = keyword.strip()
     if not clean_kw:
         return []
 
-    question_prefixes = ["kapan", "berapa", "apa itu", "bagaimana cara", "syarat", "kenapa"]
+    # Ekstrak kata kunci inti bila frasa kata kunci terlalu panjang
+    stopwords = {
+        "cegah", "sejak", "dini", "yang", "di", "ke", "dari", "untuk", "pada", "dan", "atau",
+        "ini", "itu", "adalah", "dalam", "bisa", "akan", "sudah", "telah", "susun", "menggelar",
+        "rapat", "bahwa", "oleh", "tentang", "agar", "supaya", "saat", "juga", "bagi", "komisi"
+    }
+    words = [re.sub(r"[^\w]", "", w.lower()) for w in clean_kw.split() if len(w) > 2]
+    meaningful = [w for w in words if w not in stopwords]
+    core_kw = " ".join(meaningful[:2]) if len(meaningful) >= 2 else (meaningful[0] if meaningful else clean_kw)
+
+    question_prefixes = ["kenapa", "bagaimana", "kapan", "dimana", "apa itu", "syarat", "aturan", "berapa"]
     results = []
 
     for prefix in question_prefixes:
-        query_pattern = f"{prefix} {clean_kw}"
-        suggestions = fetch_google_autocomplete(query_pattern, geo=geo, lang="id")
+        query_pattern = f"{prefix} {core_kw}"
+        suggestions = _fetch_raw_autocomplete(query_pattern, geo=geo, lang="id")
         for s in suggestions[:2]:
             clean_s = s.strip()
             if clean_s and clean_s not in results:
                 results.append(clean_s)
-        if len(results) >= 8:
+        if len(results) >= 6:
             break
 
-    # Jika pola tanya langsung kurang variatif, kombinasikan dengan suffix pencarian
+    # Tambahkan variasi suffix jika masih kurang
     if len(results) < 4:
-        alt_patterns = [f"{clean_kw} adalah", f"{clean_kw} terbaru"]
+        alt_patterns = [f"{core_kw} adalah", f"{core_kw} terbaru"]
         for alt in alt_patterns:
-            suggestions = fetch_google_autocomplete(alt, geo=geo, lang="id")
+            suggestions = _fetch_raw_autocomplete(alt, geo=geo, lang="id")
             for s in suggestions[:2]:
                 if s and s not in results:
                     results.append(s)
+
+    # Fallback template kurasi jurnalistik Indonesia jika kueri Google Suggest minim
+    if len(results) < 4:
+        display_kw = core_kw.title()
+        fallback_templates = [
+            f"Apa penyebab dan faktor pemicu {display_kw}?",
+            f"Bagaimana aturan dan regulasi terkait {display_kw}?",
+            f"Kapan kebijakan {display_kw} mulai diberlakukan?",
+            f"Apa dampak {display_kw} terhadap masyarakat?",
+            f"Bagaimana langkah pencegahan dan solusi untuk {display_kw}?"
+        ]
+        for t in fallback_templates:
+            if t not in results:
+                results.append(t)
+            if len(results) >= 6:
+                break
 
     return results[:8]
 
