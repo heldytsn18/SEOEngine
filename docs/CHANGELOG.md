@@ -4,6 +4,19 @@ Semua perubahan penting pada BorneoFlash SEO Engine didokumentasikan di file ini
 
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id-ID/1.0.0/).
 
+## [3.1.0] — 2026-10-17
+
+### Ditambahkan
+- **Otomatisasi Penuh Parameter AI pada URL Rewrite (`POST /api/v1/seo/rewrite-url`)**:
+  - `focus_keyword` kini opsional: Jika dikosongkan, AI 9Router menganalisis konten berita asal, merumuskan kata kunci fokus dengan nilai SEO tinggi dan volume pencarian Google terbaik, lalu menghitung evaluasi teknis SEO berdasarkan kata kunci pilihan AI tersebut.
+  - `tone` kini opsional (default: otomatis): AI menganalisis karakteristik naskah (apakah straight news untuk berita harian, feature untuk human-interest, investigatif untuk pendalaman fakta, atau press release untuk rilis resmi).
+  - `local_perspective` kini opsional: AI menyesuaikan konteks wilayah secara cerdas (menonjolkan relevansi Kalimantan Timur & IKN Nusantara jika terkait, atau membawakan secara objektif dengan sudut pandang redaksional BorneoFlash jika berita nasional/internasional).
+  - Response diperkaya dengan metadata `detected_tone`, `perspective_applied`, dan `featured_image_url` (gambar artikel sumber yang terdeteksi otomatis).
+- **Proteksi Keamanan SSRF (`scraper_service.py`)**:
+  - Fungsi `validate_safe_url` memvalidasi setiap skema URL (hanya http/https) dan memblokir upaya Server-Side Request Forgery ke host internal/lokal (`localhost`, `127.0.0.1`, `0.0.0.0`, `::1`) serta blok IP privat RFC 1918 (`10.x.x.x`, `172.16-31.x.x`, `192.168.x.x`, `169.254.x.x`).
+
+---
+
 ## [3.0.0] — 2026-10-17
 
 ### Ditambahkan

@@ -102,7 +102,7 @@ Client Request
 | `/api/v1/seo/analyze-url` | POST | Scrape & analisis URL kompetitor |
 | `/api/v1/seo/schema-jsonld` | POST | Generate NewsArticle JSON-LD |
 | `/api/v1/seo/analyze-taxonomy` | POST | Analisis SEO taksonomi (kategori/tag/topik) |
-| `/api/v1/seo/rewrite-url` | POST | Scrape URL lalu tulis ulang jadi naskah baru |
+| `/api/v1/seo/rewrite-url` | POST | Scrape URL lalu AI tulis ulang jadi naskah baru (keyword/tone/perspektif otomatis AI) |
 | `/api/v1/seo/improve-content` | POST | Auto-fix/perbaiki draf artikel |
 
 > 📖 Detail lengkap: [docs/API_REFERENCE.md](docs/API_REFERENCE.md)
